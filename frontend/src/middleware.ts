@@ -142,36 +142,40 @@ export async function middleware(req: NextRequest) {
 
     // 3. UI Admin Portal Protection (/admin & /admin/*)
     if (pathname.startsWith("/admin")) {
-      if (!session) {
+      // If no token exists, redirect to login with redirect parameter
+      if (!token) {
         const loginUrl = new URL("/login", req.url);
         loginUrl.searchParams.set("redirect", pathname);
         return NextResponse.redirect(loginUrl);
       }
 
-      if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
+      // If token exists and was successfully verified by edge, check role
+      if (session && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
         if (session.role === "DELIVERY_AGENT") {
           return NextResponse.redirect(new URL("/delivery", req.url));
         }
         return NextResponse.redirect(new URL("/", req.url));
       }
+      // If token exists but edge verification was inconclusive (e.g. secret mismatch between Vercel and Render),
+      // allow the request through so AdminLayout's useAuth() verifies it authoritatively via backend /api/auth/me
     }
 
     // 4. UI Delivery Partner Portal Protection (/delivery & /delivery/*)
     if (pathname.startsWith("/delivery")) {
-      if (!session) {
+      if (!token) {
         const loginUrl = new URL("/login", req.url);
         loginUrl.searchParams.set("redirect", pathname);
         return NextResponse.redirect(loginUrl);
       }
 
-      if (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
+      if (session && session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
         return NextResponse.redirect(new URL("/", req.url));
       }
     }
 
     // 5. UI Customer Account Pages (/account & /account/*)
     if (pathname.startsWith("/account")) {
-      if (!session) {
+      if (!token) {
         const loginUrl = new URL("/login", req.url);
         loginUrl.searchParams.set("redirect", pathname);
         return NextResponse.redirect(loginUrl);

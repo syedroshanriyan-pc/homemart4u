@@ -108,6 +108,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("fc_token");
+        if (stored && !document.cookie.includes("fc_token=")) {
+          const isHttps = window.location.protocol === "https:";
+          document.cookie = `fc_token=${stored}; path=/; max-age=604800; SameSite=Lax; ${isHttps ? "Secure;" : ""}`;
+        }
+      } catch {}
+    }
     refreshUser();
   }, [refreshUser]);
 
@@ -119,6 +128,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.token && typeof window !== "undefined") {
         try {
           localStorage.setItem("fc_token", data.token);
+          const isHttps = window.location.protocol === "https:";
+          document.cookie = `fc_token=${data.token}; path=/; max-age=604800; SameSite=Lax; ${isHttps ? "Secure;" : ""}`;
         } catch {}
       }
       if (data.user?.addresses?.length) {
@@ -138,6 +149,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.token && typeof window !== "undefined") {
         try {
           localStorage.setItem("fc_token", data.token);
+          const isHttps = window.location.protocol === "https:";
+          document.cookie = `fc_token=${data.token}; path=/; max-age=604800; SameSite=Lax; ${isHttps ? "Secure;" : ""}`;
         } catch {}
       }
       if (data.user?.addresses?.length) {
@@ -161,6 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (typeof window !== "undefined") {
         try {
           localStorage.removeItem("fc_token");
+          document.cookie = "fc_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
         } catch {}
       }
     }

@@ -72,7 +72,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               Return to Storefront
             </Link>
             <button
-              onClick={() => logout()}
+              onClick={async () => {
+                await logout();
+                router.push("/login?redirect=/admin");
+              }}
               className="px-5 py-2.5 bg-cream-200 hover:bg-cream-300 text-charcoal-700 text-xs font-semibold rounded-xl transition"
             >
               Sign In as Admin

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, signJwtToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -35,9 +35,19 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(
+    // Always issue a fresh token with authoritative database role
+    const token = signJwtToken({
+      id: user.id,
+      name: user.name,
+      mobile: user.mobile,
+      email: user.email,
+      role: user.role as any,
+    });
+
+    const response = NextResponse.json(
       {
         authenticated: true,
+        token,
         user: {
           id: user.id,
           name: user.name,
@@ -50,6 +60,19 @@ export async function GET(req: NextRequest) {
       },
       { headers: NO_CACHE_HEADERS }
     );
+
+    const isHttps = req.nextUrl.protocol === "https:" || req.headers.get("x-forwarded-proto") === "https";
+    response.cookies.set({
+      name: AUTH_COOKIE_NAME,
+      value: token,
+      httpOnly: true,
+      secure: isHttps,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+
+    return response;
   } catch (error) {
     console.error("Auth verification error:", error);
     return NextResponse.json(

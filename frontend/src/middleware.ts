@@ -149,15 +149,9 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(loginUrl);
       }
 
-      // If token exists and was successfully verified by edge, check role
-      if (session && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
-        if (session.role === "DELIVERY_AGENT") {
-          return NextResponse.redirect(new URL("/delivery", req.url));
-        }
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-      // If token exists but edge verification was inconclusive (e.g. secret mismatch between Vercel and Render),
-      // allow the request through so AdminLayout's useAuth() verifies it authoritatively via backend /api/auth/me
+      // If token exists, allow through to AdminLayout where useAuth() checks live /api/auth/me.
+      // If unauthorized, AdminLayout presents the clear "Access Restricted" screen with account details
+      // and a "Sign In as Admin" action instead of bouncing to home without explanation.
     }
 
     // 4. UI Delivery Partner Portal Protection (/delivery & /delivery/*)

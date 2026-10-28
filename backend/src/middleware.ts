@@ -141,17 +141,10 @@ export async function middleware(req: NextRequest) {
 
   // 3. UI Admin Portal Protection (/admin & /admin/*)
   if (pathname.startsWith("/admin")) {
-    if (!session) {
+    if (!token) {
       const loginUrl = new URL("/login", req.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
-    }
-
-    if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
-      if (session.role === "DELIVERY_AGENT") {
-        return NextResponse.redirect(new URL("/delivery", req.url));
-      }
-      return NextResponse.redirect(new URL("/", req.url));
     }
   }
 

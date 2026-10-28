@@ -54,7 +54,21 @@ async function main() {
     },
   });
 
-  console.log("Seeded User: Admin (HomeMart4U)");
+  // Owner Super Admin
+  const ownerMobile = "9844797374";
+  const ownerPass = await bcrypt.hash(adminRawPassword, 10);
+  await prisma.user.create({
+    data: {
+      name: "Syed (Owner)",
+      mobile: ownerMobile,
+      email: "syed@homemart4u.in",
+      passwordHash: ownerPass,
+      role: "SUPER_ADMIN",
+      status: "ACTIVE",
+    },
+  });
+
+  console.log("Seeded Users: Admin (HomeMart4U) & Syed (Owner SUPER_ADMIN)");
 
   // 4. Create System Settings
   const settings = [

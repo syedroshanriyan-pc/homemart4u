@@ -38,7 +38,7 @@ function LoginForm() {
         }
       } else if (res.user.role === "DELIVERY_AGENT") {
         router.push("/delivery");
-      } else if (redirectUrl && redirectUrl !== "/" && !redirectUrl.startsWith("/admin") && !redirectUrl.startsWith("/delivery")) {
+      } else if (redirectUrl && redirectUrl !== "/") {
         router.push(redirectUrl);
       } else {
         router.push("/");
@@ -53,15 +53,24 @@ function LoginForm() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-2">
         <Logo size="lg" className="justify-center" />
         <h2 className="text-xl sm:text-2xl font-serif font-medium text-charcoal-700 pt-2">
-          Welcome to Fresh Chicken
+          {redirectUrl.startsWith("/admin") ? "Admin Operations Portal" : "Welcome to Fresh Chicken"}
         </h2>
         <p className="text-xs text-charcoal-500">
-          Sign in to access your orders, saved addresses, and live delivery updates.
+          {redirectUrl.startsWith("/admin")
+            ? "Administrative credentials are required to manage orders, inventory, and operations."
+            : "Sign in to access your orders, saved addresses, and live delivery updates."}
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-cream-50 py-8 px-6 sm:px-10 rounded-3xl border border-cream-200 shadow-card space-y-6">
+          {redirectUrl.startsWith("/admin") && (
+            <div className="p-3.5 rounded-xl bg-amberGold-50 border border-amberGold-200 text-xs text-amberGold-900 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-amberGold-700 shrink-0" />
+              <span>Administrative sign-in required. Enter your admin mobile/email and password.</span>
+            </div>
+          )}
+
           {searchParams.get("deleted") === "true" && (
             <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />

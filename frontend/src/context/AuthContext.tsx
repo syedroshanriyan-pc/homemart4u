@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const task = (async () => {
       try {
-        const data = await apiClient.get<{ user: UserProfile | null }>("/api/auth/me", {
+        const data = await apiClient.get<{ user: UserProfile | null; token?: string }>("/api/auth/me", {
           cache: "no-store",
           headers: {
             "Cache-Control": "no-cache",
@@ -77,6 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setUser(data.user || null);
         setIsNetworkError(false);
+
+        if (data.token && typeof window !== "undefined") {
+          try {
+            localStorage.setItem("fc_token", data.token);
+            const isHttps = window.location.protocol === "https:";
+            document.cookie = `fc_token=${data.token}; path=/; max-age=604800; SameSite=Lax; ${isHttps ? "Secure;" : ""}`;
+          } catch {}
+        }
+
         if (data.user?.addresses?.length) {
           const defaultAddr =
             data.user.addresses.find((a: UserAddress) => a.isDefault) || data.user.addresses[0];

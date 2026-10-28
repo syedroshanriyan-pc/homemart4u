@@ -24,6 +24,7 @@ const nextConfig = {
   async rewrites() {
     const backendUrl =
       process.env.RENDER_BACKEND_URL ||
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
       process.env.BACKEND_API_URL ||
       "https://homemart4u-backend.onrender.com";
     return [

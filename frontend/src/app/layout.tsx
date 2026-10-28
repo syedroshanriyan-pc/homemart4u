@@ -39,7 +39,16 @@ export const metadata: Metadata = {
     "Farm Fresh Chicken Karnataka",
     "Curry Cut Chicken Mulbagal",
   ],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+  metadataBase: (() => {
+    const raw = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || "https://homemart4u.in";
+    try {
+      const trimmed = raw.trim();
+      const withScheme = trimmed.startsWith("http://") || trimmed.startsWith("https://") ? trimmed : `https://${trimmed}`;
+      return new URL(withScheme);
+    } catch {
+      return new URL("https://homemart4u.in");
+    }
+  })(),
   openGraph: {
     title: "homemart4u | Groceries & Fresh Meat Mulbagal",
     description: "Premium fresh chicken and daily groceries delivered to your doorstep in Mulbagal from Srinivaspur Road in ~20 minutes.",

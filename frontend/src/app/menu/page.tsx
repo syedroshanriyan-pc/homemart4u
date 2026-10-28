@@ -10,10 +10,19 @@ export const metadata = {
 };
 
 export default async function MenuPage() {
-  const [categories, products] = await Promise.all([
-    getActiveCategories(),
-    getActiveProducts(),
-  ]);
+  let categories: any[] = [];
+  let products: any[] = [];
+
+  try {
+    const [fetchedCategories, fetchedProducts] = await Promise.all([
+      getActiveCategories(),
+      getActiveProducts(),
+    ]);
+    categories = fetchedCategories || [];
+    products = fetchedProducts || [];
+  } catch (err) {
+    console.error("MenuPage SSR fallback error:", err);
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">

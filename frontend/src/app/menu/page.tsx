@@ -2,7 +2,7 @@ import React from "react";
 import { getActiveCategories, getActiveProducts } from "@/lib/catalog";
 import { MenuClient } from "./MenuClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Fresh Meat & Daily Groceries Menu | homemart4u Mulbagal",

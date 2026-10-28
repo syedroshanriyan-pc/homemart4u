@@ -84,11 +84,24 @@ export async function apiRequest<T = any>(
     ...(headers as Record<string, string>),
   };
 
+  let signal = customConfig.signal;
+  let timeoutId: any = null;
+  if (!signal) {
+    if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+      signal = AbortSignal.timeout(5000);
+    } else {
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 5000);
+      signal = controller.signal;
+    }
+  }
+
   const config: RequestInit = {
     method: "GET",
     headers: reqHeaders,
     credentials: "include", // Forwards httpOnly session cookie
     ...customConfig,
+    signal,
   };
 
   try {
@@ -115,6 +128,10 @@ export async function apiRequest<T = any>(
       throw err;
     }
     throw new ApiError(err.message || "Network connection error", 0);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 

@@ -2,7 +2,7 @@ import React from "react";
 import { getActiveCoupons } from "@/lib/catalog";
 import { OffersClient } from "./OffersClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Special Offers & Coupons | homemart4u Mulbagal",

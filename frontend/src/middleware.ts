@@ -69,15 +69,18 @@ export async function middleware(req: NextRequest) {
     const allowedList = [allowedOrigin, frontendUrl, ...allowedOriginsEnv.split(",")].map((s) => s.trim()).filter(Boolean);
     const authSecret = process.env.AUTH_SECRET || "fc_dev_super_secret_jwt_key_2026_mulbagal_secure";
 
+    const isProduction = process.env.NODE_ENV === "production";
     const isAllowedOrigin =
-      origin.startsWith("http://localhost:") ||
-      origin.startsWith("http://127.0.0.1:") ||
       origin === req.nextUrl.origin ||
+      (!isProduction && (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:"))) ||
       (allowedOrigin && origin === allowedOrigin) ||
       (frontendUrl && origin === frontendUrl) ||
-      origin.endsWith(".vercel.app") ||
-      origin.endsWith(".onrender.com") ||
-      allowedList.includes(origin);
+      allowedList.includes(origin) ||
+      // Strict production subdomains for HomeMart4U only
+      origin === "https://homemart4u.in" ||
+      origin === "https://www.homemart4u.in" ||
+      origin === "https://homemart4u.vercel.app" ||
+      origin === "https://homemart4u-backend.onrender.com";
 
     // 0. CSRF Protection for state-changing API endpoints
     if (
@@ -181,6 +184,10 @@ export async function middleware(req: NextRequest) {
     response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
     response.headers.set("X-XSS-Protection", "1; mode=block");
     response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+    response.headers.set(
+      "Content-Security-Policy",
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-ancestors 'none';"
+    );
 
     // Add CORS headers for API routes
     if (pathname.startsWith("/api/")) {

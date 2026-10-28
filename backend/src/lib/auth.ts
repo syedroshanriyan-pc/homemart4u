@@ -9,7 +9,13 @@ import { prisma } from "./prisma";
 export const AUTH_COOKIE_NAME = "fc_token";
 
 function getAuthSecret(): string {
-  const secret = process.env.AUTH_SECRET || "fc_dev_super_secret_jwt_key_2026_mulbagal_secure";
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("SECURITY FATAL: AUTH_SECRET environment variable is missing in production environment.");
+    }
+    return "fc_dev_super_secret_jwt_key_2026_mulbagal_secure";
+  }
   return secret;
 }
 

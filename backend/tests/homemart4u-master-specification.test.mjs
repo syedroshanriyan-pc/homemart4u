@@ -13,6 +13,19 @@ const prisma = new PrismaClient({
 });
 
 test.describe("Homemart4u Master Specification Compliance Suite", () => {
+  test.before(async () => {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await prisma.$connect();
+        await prisma.category.findFirst({ select: { id: true } });
+        break;
+      } catch (err) {
+        if (attempt === 3) throw err;
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+    }
+  });
+
   test.after(async () => {
     await prisma.$disconnect();
   });

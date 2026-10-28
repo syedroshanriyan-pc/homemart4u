@@ -11,7 +11,16 @@ import { Phone, Lock, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react"
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/";
+  const rawRedirect = searchParams.get("redirect") || "/";
+  // Strict Open-Redirect Protection: Must be a relative path, must start with a single "/",
+  // and must not begin with "//" or "/\" or contain colon ":" or external protocols.
+  const redirectUrl =
+    rawRedirect.startsWith("/") &&
+    !rawRedirect.startsWith("//") &&
+    !rawRedirect.startsWith("/\\") &&
+    !rawRedirect.includes(":")
+      ? rawRedirect
+      : "/";
 
   const { login } = useAuth();
   const [identifier, setIdentifier] = useState("");

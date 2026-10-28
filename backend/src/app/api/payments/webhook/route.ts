@@ -10,8 +10,7 @@ export async function POST(req: NextRequest) {
     // 1. Webhook Signature Verification
     const secret =
       process.env.PAYMENT_WEBHOOK_SECRET ||
-      process.env.RAZORPAY_WEBHOOK_SECRET ||
-      process.env.AUTH_SECRET;
+      process.env.RAZORPAY_WEBHOOK_SECRET;
 
     if (!secret) {
       console.error("Payment webhook secret is not configured on the server.");

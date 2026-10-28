@@ -29,7 +29,7 @@ export const HomePageClientController: React.FC<HomePageClientControllerProps> =
 }) => {
   const { user, loading } = useAuth();
   const [guestViewingStore, setGuestViewingStore] = useState(false);
-  const [guestDept, setGuestDept] = useState<"GROCERIES" | "MEAT">("GROCERIES");
+  const [guestDept, setGuestDept] = useState<"GROCERIES" | "MEAT">("MEAT");
 
   // 0. Wait for session restoration to complete before deciding on storefront vs blog
   if (loading) {
@@ -56,14 +56,14 @@ export const HomePageClientController: React.FC<HomePageClientControllerProps> =
   }
 
   // 2. If user is NOT logged in:
-  // Show Guest Storefront if user tapped "Shop Groceries & Meat" or "Enter Store"
+  // Show Guest Storefront if user tapped "Order Fresh Chicken & Eggs" or "Enter Store"
   if (guestViewingStore) {
     return (
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         <StorefrontView
           products={products}
           categories={categories}
-          initialDepartment={guestDept}
+          initialDepartment="MEAT"
           onBackToBlog={() => setGuestViewingStore(false)}
         />
       </div>
@@ -79,20 +79,20 @@ export const HomePageClientController: React.FC<HomePageClientControllerProps> =
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
             <span className="font-medium text-stone-200">
-              Welcome to homemart4u Mulbagal
+              Welcome to homemart4u Mulbagal &bull; Fresh Meat &amp; Eggs
             </span>
           </div>
 
           <button
             type="button"
             onClick={() => {
-              setGuestDept("GROCERIES");
+              setGuestDept("MEAT");
               setGuestViewingStore(true);
             }}
             className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] shadow-sm transition"
           >
             <ShoppingBag className="w-3 h-3" />
-            <span>Open Store Catalog &rarr;</span>
+            <span>Order Fresh Cuts &amp; Eggs &rarr;</span>
           </button>
         </div>
       </div>

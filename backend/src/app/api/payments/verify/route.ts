@@ -6,8 +6,6 @@ import { getSessionUser } from "@/lib/auth";
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
-    const authHeader = req.headers.get("x-server-secret");
-    const isServerAuthorized = authHeader && authHeader === process.env.AUTH_SECRET;
     const isAdmin = session && (session.role === "ADMIN" || session.role === "SUPER_ADMIN");
 
     const body = await req.json();
@@ -38,16 +36,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Order payment record not found" }, { status: 404 });
     }
 
-    // Verify ownership: Admin, Server Secret, or Order Owner
+    // Verify ownership: Admin or Order Owner
     const isOwner = session && session.id === payment.order.userId;
 
-    if (!isAdmin && !isServerAuthorized && !isOwner) {
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ error: "Unauthorized access to order payment" }, { status: 403 });
     }
 
     // Cryptographic validation for payment confirmation
-    if (isSuccess && !isAdmin && !isServerAuthorized) {
-      const secret = process.env.RAZORPAY_KEY_SECRET || process.env.PAYMENT_WEBHOOK_SECRET || process.env.AUTH_SECRET;
+    if (isSuccess && !isAdmin) {
+      const secret = process.env.RAZORPAY_KEY_SECRET || process.env.PAYMENT_WEBHOOK_SECRET;
       if (!secret || !razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
         return NextResponse.json(
           { error: "Unauthorized: Valid cryptographic payment signature is required to confirm online payment." },

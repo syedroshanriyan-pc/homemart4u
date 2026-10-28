@@ -57,6 +57,7 @@ model Category {
   description  String?
   imageUrl     String?
   isActive     Boolean   @default(true)
+  isComingSoon Boolean   @default(false)
   displayOrder Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -468,5 +469,26 @@ model WhatsAppMessage {
   @@index([orderId])
   @@index([status])
   @@index([recipientPhone])
+}
+
+model OfferContent {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  type        String    @default("OFFER") // OFFER, ANNOUNCEMENT
+  imageUrl    String?
+  ctaLabel    String?
+  ctaUrl      String?
+  couponCode  String?
+  status      String    @default("DRAFT") // DRAFT, SCHEDULED, PUBLISHED, ARCHIVED
+  priority    Int       @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdBy   String?
+  updatedBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, priority])
 }
 

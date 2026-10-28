@@ -70,7 +70,7 @@ const CartContext = createContext<CartContextType>({
   items: [],
   itemCount: 0,
   couponCode: "",
-  paymentMethod: "ONLINE",
+  paymentMethod: "COD",
   setPaymentMethod: () => {},
   validation: null,
   previewCalculation: {
@@ -95,7 +95,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { selectedAddress } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [couponCode, setCouponCode] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<string>("ONLINE");
+  const [paymentMethod, setPaymentMethod] = useState<string>("COD");
   const [validation, setValidation] = useState<ValidationSummary | null>(null);
   const [isValidating, setIsValidating] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);

@@ -140,6 +140,38 @@ export default function DeliveryOrderDetailPage() {
     if (pollingRef.current) clearInterval(pollingRef.current);
   };
 
+  const handleManualUpiCompleted = async () => {
+    if (!assignment?.order) return;
+    const confirmed = window.confirm(
+      `Did you check your UPI app and verify that ${formatCurrency(assignment.order.totalMinor)} has arrived into the merchant account?`
+    );
+    if (!confirmed) return;
+
+    setActionLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/delivery/assignments/${id}/deliver`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          collectionMethod: "UPI_MANUAL_VERIFIED",
+          notes: "Doorstep UPI manual agent confirmation",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to record UPI collection and deliver");
+      }
+      setIsQrModalOpen(false);
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      fetchAssignment();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleCompleteDelivery = async () => {
     setActionLoading(true);
     setError(null);
@@ -384,15 +416,36 @@ export default function DeliveryOrderDetailPage() {
                 ? item.priceMinor * item.quantity
                 : 0);
             return (
-              <div key={item.id} className="py-2.5 flex items-center justify-between text-xs">
+              <div key={item.id} className="py-2.5 flex items-start justify-between text-xs gap-3">
                 <div>
                   <span className="font-semibold text-charcoal-800 block">{prodName}</span>
                   <span className="text-[11px] text-charcoal-500">
                     {varName} &bull; Qty: {item.quantity}{" "}
                     {item.weightGrams ? `(${item.weightGrams}g each)` : ""}
                   </span>
+                  {(() => {
+                    let customOpts: any[] = [];
+                    if (item.customizationSnapshotJson) {
+                      try {
+                        customOpts = JSON.parse(item.customizationSnapshotJson);
+                      } catch {}
+                    }
+                    if (!customOpts || customOpts.length === 0) return null;
+                    return (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {customOpts.map((c, i) => (
+                          <span
+                            key={i}
+                            className="px-2 py-0.5 rounded bg-cream-100 text-[10px] text-charcoal-700 border border-cream-300 font-semibold"
+                          >
+                            {c.group ? `${c.group}: ` : ""}{c.option}
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
-                <span className="font-mono font-semibold text-charcoal-700">
+                <span className="font-mono font-semibold text-charcoal-700 whitespace-nowrap">
                   {formatCurrency(price)}
                 </span>
               </div>
@@ -489,14 +542,23 @@ export default function DeliveryOrderDetailPage() {
               </div>
 
               <div className="p-3 bg-amberGold-50 border border-amberGold-200 rounded-xl text-left text-[11px] text-charcoal-700 space-y-1">
-                <p className="font-semibold text-charcoal-900">⚡ Live Bank Verification Active</p>
+                <p className="font-semibold text-charcoal-900">Doorstep Dynamic UPI QR</p>
                 <p>
-                  Ask customer to scan with Google Pay, PhonePe, Paytm or BHIM. Status updates automatically upon bank settlement.
-                </p>
-                <p className="text-[10px] text-charcoal-500">
-                  WhatsApp payment summary also dispatched to {ord.user?.mobile || "customer"}.
+                  Ask customer to scan with Google Pay, PhonePe, Paytm, or BHIM. After verifying the incoming transfer in your receiving bank app, press Payment Completed below.
                 </p>
               </div>
+
+              {/* Payment Completed button per Requirement 6.3 & 6.4 */}
+              <button
+                type="button"
+                onClick={handleManualUpiCompleted}
+                disabled={actionLoading}
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4 text-white" />
+                <span>{actionLoading ? "Recording Collection..." : "Payment Completed (Confirmed in App)"}</span>
+              </button>
+
 
               <div className="flex gap-2">
                 <button

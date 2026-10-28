@@ -12,6 +12,8 @@ interface Category {
   description: string | null;
   imageUrl: string | null;
   displayOrder: number;
+  isComingSoon?: boolean;
+  isActive?: boolean;
   _count?: { products: number };
 }
 
@@ -21,6 +23,42 @@ export default function AdminCategoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleToggleComingSoon = async (cat: Category) => {
+    try {
+      const nextVal = !cat.isComingSoon;
+      const res = await fetch("/api/admin/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: cat.id, isComingSoon: nextVal }),
+      });
+      if (res.ok) {
+        setCategories((prev) =>
+          prev.map((c) => (c.id === cat.id ? { ...c, isComingSoon: nextVal } : c))
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleToggleActive = async (cat: Category) => {
+    try {
+      const nextVal = !cat.isActive;
+      const res = await fetch("/api/admin/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: cat.id, isActive: nextVal }),
+      });
+      if (res.ok) {
+        setCategories((prev) =>
+          prev.map((c) => (c.id === cat.id ? { ...c, isActive: nextVal } : c))
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const [form, setForm] = useState({
     name: "",
@@ -123,12 +161,13 @@ export default function AdminCategoriesPage() {
                 <th className="px-6 py-4">Description</th>
                 <th className="px-6 py-4">Display Order</th>
                 <th className="px-6 py-4 text-center">Products Count</th>
+                <th className="px-6 py-4 text-center">Status / Coming Soon</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cream-200">
               {categories.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-charcoal-400">
+                  <td colSpan={7} className="px-6 py-12 text-center text-charcoal-400">
                     {loading ? "Loading categories..." : "No categories found."}
                   </td>
                 </tr>
@@ -165,6 +204,34 @@ export default function AdminCategoriesPage() {
                         <Package className="w-3 h-3 text-charcoal-400" />
                         {cat._count?.products || 0}
                       </span>
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleComingSoon(cat)}
+                          className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase transition ${
+                            cat.isComingSoon
+                              ? "bg-amber-100 text-amber-900 border border-amber-300"
+                              : "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                          }`}
+                          title="Click to toggle Coming Soon state"
+                        >
+                          {cat.isComingSoon ? "Coming Soon" : "Live Ordering"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(cat)}
+                          className={`px-2 py-1 rounded-xl text-[10px] font-bold transition ${
+                            cat.isActive !== false
+                              ? "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                              : "bg-rose-100 text-rose-800 border border-rose-300"
+                          }`}
+                          title="Click to toggle Active/Disabled"
+                        >
+                          {cat.isActive !== false ? "Active" : "Disabled"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

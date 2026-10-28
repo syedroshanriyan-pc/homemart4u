@@ -7,7 +7,6 @@ import { useCart } from "@/context/CartContext";
 import { useAuth, UserAddress } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { LocationModal } from "@/components/ui/LocationModal";
-import { DynamicPaymentModal } from "@/components/payment/DynamicPaymentModal";
 import {
   MapPin,
   CreditCard,
@@ -29,8 +28,6 @@ export default function CheckoutPage() {
     validation,
     previewCalculation,
     clearCart,
-    paymentMethod,
-    setPaymentMethod,
   } = useCart();
 
   const { selectedAddress } = useAuth();
@@ -38,12 +35,6 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [upiOrderData, setUpiOrderData] = useState<{
-    orderId: string;
-    orderNumber: string;
-    amountRupees: number;
-  } | null>(null);
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const idempotencyKeyRef = useRef<string>("");
 
   useEffect(() => {
@@ -110,17 +101,13 @@ export default function CheckoutPage() {
   const deliveryRs =
     (validation ? validation.deliveryFeeMinor : previewCalculation.deliveryFeeMinor) / 100;
   const codFeeRs =
-    (paymentMethod === "COD"
-      ? validation
-        ? validation.codFeeMinor
-        : previewCalculation.codFeeMinor
-      : 0) / 100;
+    (validation
+      ? validation.codFeeMinor
+      : previewCalculation.codFeeMinor) / 100;
   const totalRs =
     (validation
       ? validation.totalMinor
-      : paymentMethod === "COD"
-      ? previewCalculation.totalMinor + previewCalculation.codFeeMinor
-      : previewCalculation.totalMinor) / 100;
+      : (previewCalculation.totalMinor + previewCalculation.codFeeMinor)) / 100;
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,30 +124,8 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     setErrorMessage("");
 
-    // If an unpaid order already exists from this checkout session and user switched to COD,
-    // update that existing order rather than creating a duplicate order!
-    if (activeOrderId && paymentMethod === "COD") {
-      try {
-        const switchRes = await fetch(`/api/orders/${activeOrderId}/switch-cod`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-
-        const switchData = await switchRes.json().catch(() => ({}));
-
-        if (switchRes.ok && switchData.success) {
-          clearCart();
-          router.push(`/order-success?orderId=${activeOrderId}&method=COD`);
-          return;
-        }
-      } catch {
-        // Continue to standard handler if switch fails
-      }
-    }
-
     try {
       const payload = {
-        existingOrderId: activeOrderId || undefined,
         idempotencyKey: idempotencyKeyRef.current || undefined,
         items: items.map((i) => ({
           productId: i.productId,
@@ -180,7 +145,7 @@ export default function CheckoutPage() {
             }
           : undefined,
         couponCode: couponCode || undefined,
-        paymentMethod,
+        paymentMethod: "COD",
         notes: notes.trim() || undefined,
       };
 
@@ -198,21 +163,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Track the created order ID so switching to COD never creates a duplicate
-      setActiveOrderId(data.order.id);
-
-      // If user selected Online Payment (Prepaid), prompt dynamic UPI payment modal
-      if (paymentMethod !== "COD") {
-        setIsSubmitting(false);
-        setUpiOrderData({
-          orderId: data.order.id,
-          orderNumber: data.order.orderNumber,
-          amountRupees: data.order.totalMinor / 100,
-        });
-        return;
-      }
-
-      // COD: clear cart and redirect to dedicated order success page
+      // COD: clear cart and redirect to order confirmation
       clearCart();
       router.push(`/order-success?orderId=${data.order.id}&method=COD`);
     } catch {
@@ -300,77 +251,28 @@ export default function CheckoutPage() {
           <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 shadow-xs space-y-4">
             <div className="border-b border-stone-100 pb-3 flex items-center justify-between">
               <h2 className="font-serif text-base font-bold text-stone-900 flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-emerald-700" />
-                <span>2. Choose Payment Method</span>
+                <Banknote className="w-5 h-5 text-emerald-700" />
+                <span>2. Payment Option: Cash on Delivery (COD)</span>
               </h2>
-              <span className="text-[11px] font-mono text-stone-500">
-                100% Secure Checkout
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 bg-stone-900 text-white rounded-full">
+                COD ONLY
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {/* Online Payment (Prepaid) option */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("ONLINE")}
-                className={`p-4 rounded-xl border text-left transition-all flex items-start gap-3 cursor-pointer ${
-                  paymentMethod !== "COD"
-                    ? "border-emerald-700 bg-emerald-50/30 ring-1 ring-emerald-700 shadow-xs"
-                    : "border-stone-200 bg-white hover:bg-stone-50"
-                }`}
-              >
-                <div className={`p-2 rounded-lg mt-0.5 ${paymentMethod !== "COD" ? "bg-emerald-100 text-emerald-800" : "bg-stone-100 text-stone-600"}`}>
-                  <CreditCard className="w-4 h-4 text-emerald-700" />
+            <div className="p-4 rounded-xl border border-stone-900 bg-stone-50 ring-1 ring-stone-900 flex items-start gap-3">
+              <div className="p-2.5 rounded-lg bg-stone-900 text-white mt-0.5">
+                <Banknote className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-stone-900">
+                    Pay at Doorstep (Cash or Dynamic UPI QR)
+                  </span>
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-stone-900">
-                      Homemart4u Pay (Dynamic UPI QR)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 font-bold uppercase tracking-wider">
-                      RECOMMENDED
-                    </span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-stone-100 text-stone-700 font-mono font-medium">
-                      ZERO FEE
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-stone-600 leading-relaxed pt-0.5">
-                    Dynamic QR scan via Google Pay, PhonePe, Paytm, BHIM &amp; 1-tap mobile UPI options. Instant verification.
-                  </p>
-                </div>
-              </button>
-
-              {/* Cash on Delivery option */}
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("COD")}
-                className={`p-4 rounded-xl border text-left transition-all flex items-start gap-3 cursor-pointer ${
-                  paymentMethod === "COD"
-                    ? "border-stone-900 bg-stone-50 ring-1 ring-stone-900 shadow-xs"
-                    : "border-stone-200 bg-white hover:bg-stone-50"
-                }`}
-              >
-                <div className={`p-2 rounded-lg mt-0.5 ${paymentMethod === "COD" ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-600"}`}>
-                  <Banknote className="w-4 h-4 text-emerald-600" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-stone-900">
-                      Cash on Delivery (COD)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-stone-100 text-stone-800 font-mono font-bold">
-                      +₹7 Fee
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-stone-600 leading-relaxed pt-0.5">
-                    Pay with physical cash upon package arrival at your doorstep in Mulbagal.
-                  </p>
-                </div>
-              </button>
+                <p className="text-[11px] text-stone-600 leading-relaxed">
+                  No online payment is required right now. Pay when your fresh chicken or eggs reach your doorstep in Mulbagal. You can pay via physical cash or request your assigned delivery partner to generate a dynamic UPI QR code on arrival.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -439,7 +341,7 @@ export default function CheckoutPage() {
                 </span>
               </div>
 
-              {paymentMethod === "COD" && (
+              {codFeeRs > 0 && (
                 <div className="flex justify-between text-stone-600">
                   <span>COD Convenience Surcharge</span>
                   <span className="font-mono font-medium text-stone-800">₹{codFeeRs.toFixed(2)}</span>
@@ -494,38 +396,7 @@ export default function CheckoutPage() {
         onClose={() => setIsLocationModalOpen(false)}
       />
 
-      {upiOrderData && (
-        <DynamicPaymentModal
-          isOpen={true}
-          orderId={upiOrderData.orderId}
-          orderNumber={upiOrderData.orderNumber}
-          amountRupees={upiOrderData.amountRupees}
-          onClose={() => setUpiOrderData(null)}
-          onSwitchToCod={async (orderIdToSwitch) => {
-            try {
-              const switchRes = await fetch(`/api/orders/${orderIdToSwitch}/switch-cod`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-              });
-              const switchData = await switchRes.json().catch(() => ({}));
-              if (switchRes.ok && switchData.success) {
-                clearCart();
-                setUpiOrderData(null);
-                router.push(`/order-success?orderId=${orderIdToSwitch}&method=COD`);
-              } else {
-                setErrorMessage(switchData.error || "Failed to switch to COD.");
-              }
-            } catch {
-              setErrorMessage("Network issue switching to COD.");
-            }
-          }}
-          onSuccess={(finalOrderId) => {
-            clearCart();
-            setUpiOrderData(null);
-            router.push(`/order-success?orderId=${finalOrderId}&method=ONLINE`);
-          }}
-        />
-      )}
+
     </div>
   );
 }

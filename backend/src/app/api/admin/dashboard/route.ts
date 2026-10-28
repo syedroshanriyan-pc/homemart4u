@@ -161,6 +161,46 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Persisted collection breakdown from DeliveryCollection
+    const collections = await prisma.deliveryCollection.findMany({
+      select: {
+        amountMinor: true,
+        collectionMethod: true,
+        verificationStatus: true,
+      },
+    });
+
+    let cashCollectedMinor = 0;
+    let upiManualConfirmedMinor = 0;
+    let collectionsRequiringReconciliation = 0;
+
+    collections.forEach((c) => {
+      if (c.collectionMethod === "CASH") {
+        cashCollectedMinor += c.amountMinor;
+      } else if (c.collectionMethod === "UPI_MANUAL_VERIFIED" || c.collectionMethod === "ONLINE_DOORSTEP") {
+        upiManualConfirmedMinor += c.amountMinor;
+      }
+      if (c.verificationStatus === "COLLECTED_PENDING_RECONCILIATION" || c.verificationStatus === "PENDING_RECONCILIATION") {
+        collectionsRequiringReconciliation++;
+      }
+    });
+
+    const totalCollectionsMinor = cashCollectedMinor + upiManualConfirmedMinor;
+
+    // Outstanding collection: Sum of undelivered & unsettled COD orders
+    const pendingCodOrders = await prisma.order.findMany({
+      where: {
+        status: { in: ["PLACED", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"] },
+        payment: { status: "PENDING" },
+      },
+      select: { totalMinor: true },
+    });
+    const outstandingCollectionMinor = pendingCodOrders.reduce((sum, o) => sum + o.totalMinor, 0);
+
+    const pendingDeliveries = (statusMap.PLACED || 0) + (statusMap.CONFIRMED || 0) + (statusMap.PREPARING || 0) + (statusMap.OUT_FOR_DELIVERY || 0);
+    const deliveredOrders = statusMap.DELIVERED || 0;
+    const failedDeliveries = statusMap.CANCELLED || 0;
+
     return NextResponse.json({
       metrics: {
         todaySalesMinor,
@@ -171,6 +211,15 @@ export async function GET(req: NextRequest) {
         todayOnlineOrderCount,
         aovMinor,
         statusMap,
+        totalOrders: past2DaysOrders.length,
+        pendingDeliveries,
+        deliveredOrders,
+        failedDeliveries,
+        cashCollectedMinor,
+        upiManualConfirmedMinor,
+        totalCollectionsMinor,
+        outstandingCollectionMinor,
+        collectionsRequiringReconciliation,
         past2DaysTotal: past2DaysOrders.length,
         twoDaysSuccessPayments,
         twoDaysPendingPayments,

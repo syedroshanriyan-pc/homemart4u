@@ -70,3 +70,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to create category. Please check your inputs and try again." }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await getSessionUser(req);
+    if (!session || (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+      return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { id, isComingSoon, isActive, name, description, displayOrder } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "Category ID is required" }, { status: 400 });
+    }
+
+    const data: any = {};
+    if (typeof isComingSoon === "boolean") data.isComingSoon = isComingSoon;
+    if (typeof isActive === "boolean") data.isActive = isActive;
+    if (name) data.name = name;
+    if (description !== undefined) data.description = description;
+    if (displayOrder !== undefined) data.displayOrder = parseInt(displayOrder, 10);
+
+    const updated = await prisma.category.update({
+      where: { id },
+      data,
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: session.id,
+        action: "CATEGORY_UPDATED",
+        entityType: "CATEGORY",
+        entityId: updated.id,
+        metadataJson: JSON.stringify(data),
+      },
+    });
+
+    return NextResponse.json({ success: true, category: updated });
+  } catch (error: any) {
+    console.error("Category update error:", error);
+    return NextResponse.json({ error: "Failed to update category" }, { status: 500 });
+  }
+}
+

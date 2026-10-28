@@ -1,64 +1,54 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { ProductCard, ProductData } from "@/components/catalog/ProductCard";
 import { HalalBadge } from "@/components/ui/HalalBadge";
 import { Search, PackageOpen } from "lucide-react";
-import { DepartmentSwipeContainer } from "@/components/catalog/DepartmentSwipeContainer";
-import { GroceryCatalogView, GroceryProduct } from "@/components/catalog/GroceryCatalogView";
 
 interface CategoryItem {
   id: string;
   name: string;
   slug: string;
   department?: string;
+  isComingSoon?: boolean;
   imageUrl?: string | null;
 }
 
 interface MenuClientProps {
   initialCategories: CategoryItem[];
-  initialProducts: (ProductData & { category: { id?: string; name: string; slug: string; department?: string } })[];
+  initialProducts: (ProductData & { category: { id?: string; name: string; slug: string; department?: string; isComingSoon?: boolean } })[];
   defaultCategorySlug?: string;
-  defaultDepartment?: "MEAT" | "GROCERY";
 }
 
 export const MenuClient: React.FC<MenuClientProps> = ({
   initialCategories,
   initialProducts,
   defaultCategorySlug = "ALL",
-  defaultDepartment = "MEAT",
 }) => {
   const searchParams = useSearchParams();
-  const urlDept = searchParams.get("dept")?.toUpperCase();
-  const activeInitialDept: "MEAT" | "GROCERY" = urlDept === "GROCERY" ? "GROCERY" : defaultDepartment;
+  const urlCat = searchParams.get("cat") || searchParams.get("category");
+  const initialCat = urlCat || defaultCategorySlug;
 
-  const [selectedMeatCategory, setSelectedMeatCategory] = useState<string>(defaultCategorySlug);
+  const [selectedMeatCategory, setSelectedMeatCategory] = useState<string>(initialCat);
   const [meatSearchQuery, setMeatSearchQuery] = useState("");
   const [meatInStockOnly, setMeatInStockOnly] = useState(false);
 
-  // Meat categories
+  // Meat categories only (exclude any deactivated grocery categories)
   const meatCategories = useMemo(() => {
     return initialCategories.filter(
       (c) => c.department !== "GROCERY" && !["dairy-eggs-bread", "atta-rice-dal", "oils-ghee", "spices-masalas", "fresh-vegetables", "tea-beverages"].includes(c.slug)
     );
   }, [initialCategories]);
 
-  // Meat products
+  // Meat & Egg products
   const meatProducts = useMemo(() => {
     return initialProducts.filter(
       (p) => p.category?.department !== "GROCERY" && !["dairy-eggs-bread", "atta-rice-dal", "oils-ghee", "spices-masalas", "fresh-vegetables", "tea-beverages"].includes(p.category?.slug)
     );
   }, [initialProducts]);
 
-  // Grocery products
-  const groceryProducts = useMemo(() => {
-    return initialProducts.filter(
-      (p) => p.category?.department === "GROCERY" || ["dairy-eggs-bread", "atta-rice-dal", "oils-ghee", "spices-masalas", "fresh-vegetables", "tea-beverages"].includes(p.category?.slug)
-    ) as unknown as GroceryProduct[];
-  }, [initialProducts]);
-
-  // Filtered meat products
+  // Filtered products
   const filteredMeatProducts = useMemo(() => {
     return meatProducts.filter((product) => {
       if (selectedMeatCategory !== "ALL" && product.category?.slug !== selectedMeatCategory) {
@@ -79,7 +69,7 @@ export const MenuClient: React.FC<MenuClientProps> = ({
     });
   }, [meatProducts, selectedMeatCategory, meatSearchQuery, meatInStockOnly]);
 
-  const meatCatalogNode = (
+  return (
     <div className="space-y-8 animate-fade-in">
       {/* Category Pills & Search Controls */}
       <div className="space-y-4">
@@ -93,10 +83,10 @@ export const MenuClient: React.FC<MenuClientProps> = ({
                 : "bg-white text-stone-700 hover:bg-stone-50 border-2 border-stone-200 shadow-sm"
             }`}
           >
-            All Cuts & Items
+            All Fresh Cuts &amp; Eggs
           </button>
           {meatCategories.map((cat) => {
-            const isSoon = cat.slug === "fish-seafood" || cat.slug === "fresh-mutton";
+            const isSoon = cat.isComingSoon || cat.slug === "fish-seafood" || cat.slug === "fresh-mutton";
             return (
               <button
                 key={cat.id}
@@ -128,10 +118,10 @@ export const MenuClient: React.FC<MenuClientProps> = ({
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search chicken cuts, mutton, fish, eggs, groceries..."
+              placeholder="Search chicken cuts, desi eggs, farm eggs..."
               value={meatSearchQuery}
               onChange={(e) => setMeatSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-2xl text-xs text-charcoal-700 placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-amberGold-400 shadow-sm transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-2xl text-xs text-charcoal-700 placeholder-charcoal-400 focus:outline-none focus:ring-2 focus:ring-rose-400 shadow-sm transition-all"
             />
           </div>
 
@@ -140,7 +130,7 @@ export const MenuClient: React.FC<MenuClientProps> = ({
               type="checkbox"
               checked={meatInStockOnly}
               onChange={(e) => setMeatInStockOnly(e.target.checked)}
-              className="rounded border-cream-300 text-amberGold-600 focus:ring-amberGold-400 h-4 w-4"
+              className="rounded border-cream-300 text-rose-600 focus:ring-rose-400 h-4 w-4"
             />
             <span>Show In Stock Only</span>
           </label>
@@ -158,8 +148,8 @@ export const MenuClient: React.FC<MenuClientProps> = ({
           </h3>
           <p className="text-xs text-stone-600 max-w-lg mx-auto">
             {selectedMeatCategory === "fish-seafood"
-              ? "We are preparing our expansion into fresh coastal fish, freshwater rohu, prawns, and steaks with zero chemical preservatives. Preview our upcoming items below!"
-              : "We are onboarding certified local farms for 100% Halal young goat mutton with customized curry cuts, biryani pieces, and minced keema. Preview upcoming cuts below!"}
+              ? "We are preparing our expansion into fresh coastal fish, freshwater rohu, prawns, and steaks with zero chemical preservatives. Stay tuned!"
+              : "We are onboarding certified local farms for 100% Halal young goat mutton with customized curry cuts, biryani pieces, and minced keema. Stay tuned!"}
           </p>
         </div>
       )}
@@ -194,21 +184,5 @@ export const MenuClient: React.FC<MenuClientProps> = ({
         </div>
       )}
     </div>
-  );
-
-  const groceryCatalogNode = (
-    <GroceryCatalogView
-      products={groceryProducts}
-      categories={initialCategories}
-    />
-  );
-
-  return (
-    <DepartmentSwipeContainer
-      key={activeInitialDept}
-      initialDepartment={activeInitialDept}
-      meatContent={meatCatalogNode}
-      groceryContent={groceryCatalogNode}
-    />
   );
 };

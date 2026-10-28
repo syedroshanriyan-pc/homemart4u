@@ -36,7 +36,7 @@ interface Assignment {
       status: string;
     } | null;
     deliveryCollection?: {
-      collectionMethod: "CASH" | "ONLINE_DOORSTEP" | "PREPAID";
+      collectionMethod: "CASH" | "ONLINE_DOORSTEP" | "PREPAID" | "UPI_MANUAL_VERIFIED" | string;
       verificationStatus: string;
       amountMinor: number;
     } | null;
@@ -94,8 +94,9 @@ export default function DeliveryDashboardPage() {
 
   const totalOnlineDoorstepMinor =
     stats?.onlineDoorstepMinor ??
+    stats?.upiManualConfirmedMinor ??
     completedRuns
-      .filter((a) => a.order.deliveryCollection?.collectionMethod === "ONLINE_DOORSTEP")
+      .filter((a) => a.order.deliveryCollection?.collectionMethod === "UPI_MANUAL_VERIFIED" || a.order.deliveryCollection?.collectionMethod === "ONLINE_DOORSTEP")
       .reduce((sum, a) => sum + (a.order.deliveryCollection?.amountMinor || a.order.totalMinor || 0), 0);
 
   // Apply active/completed tab then payment filter

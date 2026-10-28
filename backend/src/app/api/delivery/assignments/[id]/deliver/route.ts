@@ -59,19 +59,10 @@ export async function POST(
 
     const isOriginallyCod =
       assignment.order.payment?.method === "COD" || assignment.order.codFeeMinor > 0;
-    const requestedMethod = body.collectionMethod || (isOriginallyCod ? "CASH" : "PREPAID");
 
-    // Authoritative verification check for doorstep online payment
-    if (requestedMethod === "ONLINE_DOORSTEP") {
-      if (assignment.order.payment?.status !== "COMPLETED") {
-        return NextResponse.json(
-          {
-            error:
-              "Doorstep online payment is not confirmed yet. Wait for bank confirmation or collect cash.",
-          },
-          { status: 400 }
-        );
-      }
+    let requestedMethod = body.collectionMethod || (isOriginallyCod ? "CASH" : "CASH");
+    if (requestedMethod === "ONLINE_DOORSTEP" || requestedMethod === "UPI") {
+      requestedMethod = "UPI_MANUAL_VERIFIED";
     }
 
     const now = new Date();
@@ -95,32 +86,46 @@ export async function POST(
         },
       });
 
-      // 3. Mark payment completed if collected via Cash
-      if (requestedMethod === "CASH" && assignment.order.payment && assignment.order.payment.status !== "COMPLETED") {
-        await tx.payment.update({
-          where: { orderId: assignment.orderId },
-          data: { status: "COMPLETED" },
-        });
-      }
+      // 3. Mark payment completed with authoritative collection method
+      const isUpiManual = requestedMethod === "UPI_MANUAL_VERIFIED";
+      await tx.payment.upsert({
+        where: { orderId: assignment.orderId },
+        update: {
+          status: "COMPLETED",
+          method: isUpiManual ? "UPI" : "COD",
+          provider: isUpiManual ? "UPI_MANUAL_VERIFIED" : "CASH",
+        },
+        create: {
+          orderId: assignment.orderId,
+          amountMinor: assignment.order.totalMinor,
+          status: "COMPLETED",
+          method: isUpiManual ? "UPI" : "COD",
+          provider: isUpiManual ? "UPI_MANUAL_VERIFIED" : "CASH",
+        },
+      });
 
       // 4. Create or update DeliveryCollection record (idempotent, strictly one per order)
+      const verificationStatus = isUpiManual
+        ? "MANUAL_AGENT_CONFIRMED"
+        : "COLLECTED_PENDING_RECONCILIATION";
+
       const collectionRecord = await tx.deliveryCollection.upsert({
         where: { orderId: assignment.orderId },
         update: {
           collectionMethod: requestedMethod,
           amountMinor: assignment.order.totalMinor,
-          verificationStatus: requestedMethod === "CASH" ? "COLLECTED_PENDING_RECONCILIATION" : "VERIFIED",
+          verificationStatus,
           collectedAt: now,
-          notes: body.notes || null,
+          notes: body.notes || (isUpiManual ? "Doorstep UPI manual agent confirmation" : "Doorstep cash collected"),
         },
         create: {
           orderId: assignment.orderId,
           agentUserId: assignment.agentUserId,
           collectionMethod: requestedMethod,
           amountMinor: assignment.order.totalMinor,
-          verificationStatus: requestedMethod === "CASH" ? "COLLECTED_PENDING_RECONCILIATION" : "VERIFIED",
+          verificationStatus,
           collectedAt: now,
-          notes: body.notes || null,
+          notes: body.notes || (isUpiManual ? "Doorstep UPI manual agent confirmation" : "Doorstep cash collected"),
         },
       });
 
@@ -134,16 +139,17 @@ export async function POST(
       await tx.auditLog.create({
         data: {
           actorUserId: session.id,
-          action: "ORDER_DELIVERED",
+          action: isUpiManual ? "DOORSTEP_UPI_MANUAL_VERIFIED" : "DOORSTEP_CASH_COLLECTED",
           entityType: "ORDER",
           entityId: assignment.orderId,
           metadataJson: JSON.stringify({
             assignmentId: assignment.id,
             deliveredAt: now,
             agentUserId: assignment.agentUserId,
-            originalPaymentMethod: assignment.order.payment?.method || (assignment.order.codFeeMinor > 0 ? "COD" : "ONLINE"),
+            originalPaymentMethod: assignment.order.payment?.method || "COD",
             actualCollectionMethod: requestedMethod,
             amountMinor: assignment.order.totalMinor,
+            verificationStatus,
           }),
         },
       });

@@ -429,13 +429,13 @@ export const Navbar: React.FC = () => {
             <div className="space-y-1 pt-1">
               {[
                 { label: "Home", href: "/", icon: "🏠" },
-                { label: "⚡ Daily Groceries", href: "/menu?dept=GROCERY", icon: "🥦" },
-                { label: "🍗 Farm Fresh Meats", href: "/menu?dept=MEAT", icon: "🥩" },
-                { label: "All Products & Cuts", href: "/menu", icon: "📦" },
-                { label: "Discount Offers & Coupons", href: "/offers", icon: "🏷️" },
-                { label: "Store Hub & Delivery Radius", href: "/location", icon: "📍" },
-                { label: "Freshness & Halal Story", href: "/about", icon: "🛡️" },
-                { label: "Contact Customer Support", href: "/contact", icon: "📞" },
+                { label: "🍗 Fresh Chicken", href: "/menu?cat=fresh-chicken", icon: "🍗" },
+                { label: "🥚 Desi & Farm Eggs", href: "/menu?cat=eggs", icon: "🥚" },
+                { label: "📦 All Fresh Cuts", href: "/menu", icon: "🥩" },
+                { label: "🏷️ Offers & Deals", href: "/offers", icon: "🏷️" },
+                { label: "📍 Delivery Hub & Hours", href: "/location", icon: "📍" },
+                { label: "🛡️ 100% Halal Guarantee", href: "/about", icon: "🛡️" },
+                { label: "📞 Customer Support", href: "/contact", icon: "📞" },
               ].map((link) => {
                 const isActive = pathname === link.href;
                 return (

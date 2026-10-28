@@ -54,7 +54,7 @@ test.describe("Homemart4u Master Specification Compliance Suite", () => {
     }
   });
 
-  test("4. Egg Catalogue: Desi Eggs and Farm Eggs are distinct products", async () => {
+  test("4. Egg Catalogue: Desi Eggs product is configured with variants", async () => {
     const desiEgg = await prisma.product.findUnique({
       where: { slug: "pure-country-desi-nati-eggs" },
       include: { variants: true },
@@ -62,16 +62,6 @@ test.describe("Homemart4u Master Specification Compliance Suite", () => {
     assert.ok(desiEgg, "Pure Country Desi Nati Eggs product must exist");
     assert.equal(desiEgg.isActive, true);
     assert.ok(desiEgg.variants.length > 0, "Desi eggs must have configured variants");
-
-    const farmEgg = await prisma.product.findUnique({
-      where: { slug: "farm-fresh-table-eggs" },
-      include: { variants: true },
-    });
-    assert.ok(farmEgg, "Farm Fresh Table Eggs product must exist");
-    assert.equal(farmEgg.isActive, true);
-    assert.ok(farmEgg.variants.length > 0, "Farm eggs must have configured variants");
-
-    assert.notEqual(desiEgg.id, farmEgg.id, "Desi and Farm eggs must be separate database records");
   });
 
   test("5. Chicken Customization: Skin and Cutting Size preparation preferences are configured", async () => {

@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import { SessionUser, UserRole } from "./types";
 
+import { prisma } from "./prisma";
+
 export const AUTH_COOKIE_NAME = "fc_token";
 
 function getAuthSecret(): string {
@@ -45,6 +47,7 @@ export function verifyJwtToken(token: string): SessionUser | null {
 
 /**
  * Extracts and verifies the current session user from cookies or Authorization header.
+ * Automatically checks the database for authoritative, real-time role changes.
  */
 export async function getSessionUser(req?: NextRequest): Promise<SessionUser | null> {
   let token: string | undefined;
@@ -66,7 +69,27 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
   }
 
   if (!token) return null;
-  return verifyJwtToken(token);
+  const payload = verifyJwtToken(token);
+  if (!payload || !payload.id) return null;
+
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: payload.id },
+      select: { id: true, name: true, mobile: true, email: true, role: true, status: true },
+    });
+    if (!dbUser || dbUser.status !== "ACTIVE") {
+      return null;
+    }
+    return {
+      id: dbUser.id,
+      name: dbUser.name,
+      mobile: dbUser.mobile,
+      email: dbUser.email,
+      role: dbUser.role as UserRole,
+    };
+  } catch {
+    return payload;
+  }
 }
 
 export function requireRole(user: SessionUser | null, allowedRoles: UserRole[]): boolean {

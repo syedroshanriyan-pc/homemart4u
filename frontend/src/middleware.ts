@@ -125,9 +125,7 @@ export async function middleware(req: NextRequest) {
       if (!session) {
         return NextResponse.json({ error: "Unauthorized: Login required" }, { status: 401 });
       }
-      if (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
-        return NextResponse.json({ error: "Forbidden: Administrator privileges required" }, { status: 403 });
-      }
+      // Authoritative role validation is enforced in API route handlers via live database lookup in getSessionUser
     }
 
     // 2. API Route Protection: /api/delivery/*
@@ -135,9 +133,7 @@ export async function middleware(req: NextRequest) {
       if (!session) {
         return NextResponse.json({ error: "Unauthorized: Login required" }, { status: 401 });
       }
-      if (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
-        return NextResponse.json({ error: "Forbidden: Delivery Agent privileges required" }, { status: 403 });
-      }
+      // Authoritative role validation is enforced in API route handlers via live database lookup in getSessionUser
     }
 
     // 3. UI Admin Portal Protection (/admin & /admin/*)

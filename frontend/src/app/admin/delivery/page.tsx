@@ -75,11 +75,23 @@ export default function AdminDeliveryAgentsPage() {
   // Delete Target Agent
   const [deletingAgent, setDeletingAgent] = useState<Agent | null>(null);
 
+  const adminFetch = (url: string, options: RequestInit = {}) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
+    return fetch(url, {
+      ...options,
+      credentials: "include",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+  };
+
   const fetchAgents = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch("/api/admin/delivery-agents");
+      const res = await adminFetch("/api/admin/delivery-agents");
       if (res.ok) {
         const data = await res.json();
         setAgents(data.agents || []);
@@ -107,7 +119,7 @@ export default function AdminDeliveryAgentsPage() {
     setSuccessMessage(null);
 
     try {
-      const res = await fetch("/api/admin/delivery-agents", {
+      const res = await adminFetch("/api/admin/delivery-agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -154,7 +166,7 @@ export default function AdminDeliveryAgentsPage() {
     setSuccessMessage(null);
 
     try {
-      const res = await fetch(`/api/admin/delivery-agents/${editingAgent.id}`, {
+      const res = await adminFetch(`/api/admin/delivery-agents/${editingAgent.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editingAgent),
@@ -184,7 +196,7 @@ export default function AdminDeliveryAgentsPage() {
     const nextStatus = isCurrentlyOnline ? "OFFLINE" : "AVAILABLE";
 
     try {
-      const res = await fetch(`/api/admin/delivery-agents/${agent.id}`, {
+      const res = await adminFetch(`/api/admin/delivery-agents/${agent.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ availabilityStatus: nextStatus }),
@@ -213,7 +225,7 @@ export default function AdminDeliveryAgentsPage() {
     setError(null);
 
     try {
-      const res = await fetch(`/api/admin/delivery-agents/${deletingAgent.id}`, {
+      const res = await adminFetch(`/api/admin/delivery-agents/${deletingAgent.id}`, {
         method: "DELETE",
       });
 

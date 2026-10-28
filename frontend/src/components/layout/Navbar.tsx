@@ -429,13 +429,13 @@ export const Navbar: React.FC = () => {
             <div className="space-y-1 pt-1">
               {[
                 { label: "Home", href: "/", icon: "🏠" },
-                { label: "🍗 Fresh Chicken", href: "/menu?cat=fresh-chicken", icon: "🍗" },
-                { label: "🥚 Desi & Farm Eggs", href: "/menu?cat=eggs", icon: "🥚" },
-                { label: "📦 All Fresh Cuts", href: "/menu", icon: "🥩" },
-                { label: "🏷️ Offers & Deals", href: "/offers", icon: "🏷️" },
-                { label: "📍 Delivery Hub & Hours", href: "/location", icon: "📍" },
-                { label: "🛡️ 100% Halal Guarantee", href: "/about", icon: "🛡️" },
-                { label: "📞 Customer Support", href: "/contact", icon: "📞" },
+                { label: "Fresh Chicken", href: "/menu?cat=fresh-chicken", icon: "🍗" },
+                { label: "Desi & Farm Eggs", href: "/menu?cat=eggs", icon: "🥚" },
+                { label: "All Fresh Cuts", href: "/menu", icon: "🥩" },
+                { label: "Offers & Deals", href: "/offers", icon: "🏷️" },
+                { label: "Delivery Hub & Hours", href: "/location", icon: "📍" },
+                { label: "100% Halal Guarantee", href: "/about", icon: "🛡️" },
+                { label: "Customer Support", href: "/contact", icon: "📞" },
               ].map((link) => {
                 const isActive = pathname === link.href;
                 return (
@@ -501,7 +501,7 @@ export const Navbar: React.FC = () => {
                     >
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-amberGold-700 flex-shrink-0" />
-                        <span>⚙️ Admin Operations Portal</span>
+                        <span>Admin Operations Portal</span>
                       </div>
                       <span className="text-[10px] text-amberGold-800 font-mono">&rarr;</span>
                     </Link>

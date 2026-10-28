@@ -35,56 +35,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login?redirect=/admin");
+    if (!loading) {
+      if (!user) {
+        router.push("/login?redirect=/admin");
+      } else if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+        router.push("/");
+      }
     }
   }, [user, loading, router]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-charcoal-700 text-cream-100 text-xs font-mono">
-        Verifying administrative authorization...
+        Verifying authorization...
       </div>
     );
   }
 
-  if (!user) {
+  if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
     return null;
-  }
-
-  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-cream-100 px-4 text-center">
-        <div className="max-w-md bg-white p-8 rounded-3xl border border-cream-300 shadow-card space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-crimson-100 text-crimson-600 flex items-center justify-center mx-auto">
-            <LogOut className="w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-serif font-bold text-charcoal-800">
-            Access Restricted
-          </h2>
-          <p className="text-xs text-charcoal-500 leading-relaxed">
-            The Operations Portal requires administrative clearance. Your current account ({user.mobile}) is authorized as a <strong>{user.role}</strong>.
-          </p>
-          <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center">
-            <Link
-              href="/"
-              className="px-5 py-2.5 bg-charcoal-700 hover:bg-charcoal-800 text-cream-50 text-xs font-semibold rounded-xl transition"
-            >
-              Return to Storefront
-            </Link>
-            <button
-              onClick={async () => {
-                await logout();
-                router.push("/login?redirect=/admin");
-              }}
-              className="px-5 py-2.5 bg-cream-200 hover:bg-cream-300 text-charcoal-700 text-xs font-semibold rounded-xl transition"
-            >
-              Sign In as Admin
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   const navItems = [

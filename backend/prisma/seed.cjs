@@ -144,7 +144,7 @@ async function main() {
       name: "Fresh Mutton & Lamb",
       slug: "fresh-mutton",
       department: "MEAT",
-      description: "Tender farm-raised goat meat, succulent curry cuts, and rich biryani pieces coming soon to Mulbagal.",
+      description: "Tender farm-raised goat meat, succulent curry cuts, and rich biryani pieces coming soon.",
       imageUrl: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?auto=format&fit=crop&w=600&q=80",
       displayOrder: 6,
     },

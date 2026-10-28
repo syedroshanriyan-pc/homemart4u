@@ -23,7 +23,7 @@ describe("Groceries, Coming Soon Meat & Comprehensive Error Pages (Frontend)", (
     const content = fs.readFileSync(detailPath, "utf-8");
 
     assert.ok(content.includes("isComingSoon"), "ProductDetailClient must compute isComingSoon");
-    assert.ok(content.includes("Coming Soon to Mulbagal"), "ProductDetailClient must display Coming Soon banner");
+    assert.ok(content.includes("Coming Soon "), "ProductDetailClient must display Coming Soon banner");
     assert.ok(content.includes("Launching Shortly"), "ProductDetailClient CTA must announce launching shortly");
   });
 

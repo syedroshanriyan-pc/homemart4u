@@ -130,13 +130,12 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
               <button
                 key={sc.slug}
                 onClick={() => setSelectedSubCat(sc.slug)}
-                className={`shrink-0 px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shadow-sm ${
-                  isSelected
+                className={`shrink-0 px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shadow-sm ${isSelected
                     ? "bg-rose-700 text-white ring-2 ring-rose-500 shadow-md"
                     : sc.isSoon
-                    ? "bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100"
-                    : "bg-white text-stone-700 hover:bg-stone-50 border border-stone-200"
-                }`}
+                      ? "bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100"
+                      : "bg-white text-stone-700 hover:bg-stone-50 border border-stone-200"
+                  }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-amber-300" : sc.isSoon ? "text-amber-600" : "text-stone-500"}`} />
                 <span>{sc.name}</span>
@@ -155,7 +154,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
       {(selectedSubCat === "fish-seafood" || selectedSubCat === "fresh-mutton") && (
         <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-amber-500/10 border-2 border-amber-300 rounded-3xl p-5 text-center space-y-1 shadow-sm">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 text-stone-900 font-extrabold text-[10px] uppercase tracking-wider">
-            <span>Coming Soon to Mulbagal</span>
+            <span>Coming Soon </span>
           </div>
           <h3 className="font-serif text-lg font-bold text-stone-900">
             {selectedSubCat === "fish-seafood" ? "Fresh Coastal Fish & Seafood" : "Daily Fresh Goat Mutton & Lamb"}

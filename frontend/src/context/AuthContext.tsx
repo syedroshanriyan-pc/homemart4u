@@ -103,7 +103,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } else {
           // 5xx Server error or network error: preserve current user session, mark network issue
-          console.warn("Session check network interruption:", err);
           setIsNetworkError(true);
         }
       } finally {

@@ -14,8 +14,12 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
   const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login?redirect=/delivery");
+    if (!loading) {
+      if (!user) {
+        router.push("/login?redirect=/delivery");
+      } else if (user.role !== "DELIVERY_AGENT" && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+        router.push("/");
+      }
     }
   }, [user, loading, router]);
 
@@ -30,8 +34,8 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
       if (res.ok) {
         setIsOnline(!isOnline);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Silence network errors in console
     } finally {
       setToggling(false);
     }
@@ -40,45 +44,13 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-charcoal-800 text-cream-100 text-xs font-mono">
-        Authenticating Delivery Executive...
+        Authenticating...
       </div>
     );
   }
 
-  if (!user) {
+  if (!user || (user.role !== "DELIVERY_AGENT" && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
     return null;
-  }
-
-  if (user.role !== "DELIVERY_AGENT" && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-cream-100 px-4 text-center">
-        <div className="max-w-md bg-white p-8 rounded-3xl border border-cream-300 shadow-card space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-amberGold-100 text-amberGold-700 flex items-center justify-center mx-auto">
-            <Bike className="w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-serif font-bold text-charcoal-800">
-            Delivery Fleet Clearance Required
-          </h2>
-          <p className="text-xs text-charcoal-500 leading-relaxed">
-            This portal is exclusively for registered delivery riders. Your current account ({user.mobile}) is registered as a customer.
-          </p>
-          <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center">
-            <Link
-              href="/"
-              className="px-5 py-2.5 bg-charcoal-700 hover:bg-charcoal-800 text-cream-50 text-xs font-semibold rounded-xl transition"
-            >
-              Back to Storefront
-            </Link>
-            <button
-              onClick={() => logout()}
-              className="px-5 py-2.5 bg-cream-200 hover:bg-cream-300 text-charcoal-700 text-xs font-semibold rounded-xl transition"
-            >
-              Sign In as Rider
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (

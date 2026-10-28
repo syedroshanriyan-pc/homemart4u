@@ -266,7 +266,7 @@ export default function CheckoutPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-stone-900">
-                    Pay at Doorstep (Cash or Dynamic UPI QR)
+                    Homemart4u Pay (Dynamic UPI QR) or Cash at Doorstep
                   </span>
                 </div>
                 <p className="text-[11px] text-stone-600 leading-relaxed">

@@ -152,7 +152,7 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
               {isComingSoon ? (
                 <span className="px-3 py-1 rounded-full bg-amber-500 text-charcoal-900 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
                   <Clock className="w-3.5 h-3.5 text-charcoal-900" />
-                  Coming Soon to Mulbagal
+                  Coming Soon
                 </span>
               ) : product.isAvailable ? (
                 <Badge variant="inStock" size="md">

@@ -141,7 +141,7 @@ export const MenuClient: React.FC<MenuClientProps> = ({
       {(selectedMeatCategory === "fish-seafood" || selectedMeatCategory === "fresh-mutton") && (
         <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-amber-500/10 border-2 border-amber-300 rounded-3xl p-5 text-center space-y-1 shadow-sm">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 text-charcoal-900 font-extrabold text-[10px] uppercase tracking-wider">
-            <span>Coming Soon to Mulbagal</span>
+            <span>Coming Soon </span>
           </div>
           <h3 className="font-serif text-lg font-bold text-stone-900">
             {selectedMeatCategory === "fish-seafood" ? "Fresh Coastal Fish & Seafood" : "Daily Fresh Goat Mutton & Lamb"}

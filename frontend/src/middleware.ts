@@ -103,9 +103,12 @@ export async function middleware(req: NextRequest) {
     if (req.method === "OPTIONS" && pathname.startsWith("/api/")) {
       const preflightHeaders = new Headers();
       if (origin && isAllowedOrigin) {
+        const requestedHeaders =
+          req.headers.get("access-control-request-headers") ||
+          "Content-Type, Authorization, Cache-Control, Pragma, Expires, X-Requested-With, Accept, Origin, x-webhook-signature, x-razorpay-signature, x-server-secret, x-csrf-token";
         preflightHeaders.set("Access-Control-Allow-Origin", origin);
         preflightHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-        preflightHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, x-webhook-signature, x-razorpay-signature, x-server-secret");
+        preflightHeaders.set("Access-Control-Allow-Headers", requestedHeaders);
         preflightHeaders.set("Access-Control-Allow-Credentials", "true");
         preflightHeaders.set("Access-Control-Max-Age", "86400");
       }
@@ -123,34 +126,32 @@ export async function middleware(req: NextRequest) {
 
     const session = token ? await verifyJwtInEdge(token, authSecret) : null;
 
-    // 1. API Route Protection: /api/admin/*
+    // 1. API Route Protection: /api/admin/* (Return 404 to non-admins so internal routes cannot be probed)
     if (pathname.startsWith("/api/admin")) {
-      if (!session) {
-        return NextResponse.json({ error: "Unauthorized: Login required" }, { status: 401 });
+      if (!session || (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+        return NextResponse.json({ error: "Not Found" }, { status: 404 });
       }
-      // Authoritative role validation is enforced in API route handlers via live database lookup in getSessionUser
     }
 
-    // 2. API Route Protection: /api/delivery/*
+    // 2. API Route Protection: /api/delivery/* (Return 404 to unauthorized users)
     if (pathname.startsWith("/api/delivery")) {
-      if (!session) {
-        return NextResponse.json({ error: "Unauthorized: Login required" }, { status: 401 });
+      if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+        return NextResponse.json({ error: "Not Found" }, { status: 404 });
       }
-      // Authoritative role validation is enforced in API route handlers via live database lookup in getSessionUser
     }
 
     // 3. UI Admin Portal Protection (/admin & /admin/*)
+    // Even if user knows the routes, if they are not verified admins they cannot access them
     if (pathname.startsWith("/admin")) {
-      // If no token exists, redirect to login with redirect parameter
       if (!token) {
         const loginUrl = new URL("/login", req.url);
         loginUrl.searchParams.set("redirect", pathname);
         return NextResponse.redirect(loginUrl);
       }
 
-      // If token exists, allow through to AdminLayout where useAuth() checks live /api/auth/me.
-      // If unauthorized, AdminLayout presents the clear "Access Restricted" screen with account details
-      // and a "Sign In as Admin" action instead of bouncing to home without explanation.
+      if (session && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
+        return NextResponse.redirect(new URL("/", req.url));
+      }
     }
 
     // 4. UI Delivery Partner Portal Protection (/delivery & /delivery/*)

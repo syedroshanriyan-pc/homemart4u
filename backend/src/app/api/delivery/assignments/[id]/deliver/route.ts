@@ -61,6 +61,14 @@ export async function POST(
       assignment.order.payment?.method === "COD" || assignment.order.codFeeMinor > 0;
 
     let requestedMethod = body.collectionMethod || (isOriginallyCod ? "CASH" : "CASH");
+    if (requestedMethod === "ONLINE_DOORSTEP") {
+      if (assignment.order.payment?.status !== "COMPLETED") {
+        return NextResponse.json(
+          { error: "Doorstep online payment is not confirmed yet" },
+          { status: 400 }
+        );
+      }
+    }
     if (requestedMethod === "ONLINE_DOORSTEP" || requestedMethod === "UPI") {
       requestedMethod = "UPI_MANUAL_VERIFIED";
     }

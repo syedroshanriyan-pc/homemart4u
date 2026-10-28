@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  outputFileTracingRoot: __dirname,
+  outputFileTracingRoot: path.join(__dirname, "../"),
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

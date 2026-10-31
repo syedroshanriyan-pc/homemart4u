@@ -51,6 +51,9 @@ const AuthContext = createContext<AuthContextType>({
   refreshUser: async () => {},
 });
 
+let isFetchInterceptorInstalled = false;
+let nativeWindowFetch: typeof window.fetch | null = null;
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(() => {
     if (typeof window !== "undefined") {
@@ -144,7 +147,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    let originalFetch: typeof window.fetch | null = null;
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("fc_token");
@@ -155,37 +157,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch {}
 
       // Intercept client-side fetch calls across the application to ensure Authorization Bearer header is forwarded to backend
-      originalFetch = window.fetch;
-      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-        const urlStr =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-            ? input.toString()
-            : input.url;
+      if (!isFetchInterceptorInstalled) {
+        isFetchInterceptorInstalled = true;
+        nativeWindowFetch = window.fetch;
+        window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+          const urlStr =
+            typeof input === "string"
+              ? input
+              : input instanceof URL
+              ? input.toString()
+              : input.url;
 
-        if (urlStr.includes("/api/")) {
-          const token = localStorage.getItem("fc_token");
-          const headers = new Headers(init?.headers);
-          if (token && !headers.has("Authorization")) {
-            headers.set("Authorization", `Bearer ${token}`);
+          if (urlStr.includes("/api/")) {
+            const token = localStorage.getItem("fc_token");
+            const headers = new Headers(init?.headers);
+            if (token && !headers.has("Authorization")) {
+              headers.set("Authorization", `Bearer ${token}`);
+            }
+            return nativeWindowFetch!(input, {
+              ...init,
+              credentials: init?.credentials || "include",
+              headers,
+            });
           }
-          return originalFetch!(input, {
-            ...init,
-            credentials: init?.credentials || "include",
-            headers,
-          });
-        }
-        return originalFetch!(input, init);
-      };
+          return nativeWindowFetch!(input, init);
+        };
+      }
     }
     refreshUser();
-
-    return () => {
-      if (originalFetch && typeof window !== "undefined") {
-        window.fetch = originalFetch;
-      }
-    };
   }, [refreshUser]);
 
   const login = async (identifier: string, pass: string) => {

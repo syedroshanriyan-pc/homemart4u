@@ -214,16 +214,82 @@ function OrderSuccessContent() {
         </div>
       </div>
 
-      {/* 2. Order Status Callout Box */}
+      {/* 2. Four-Stage Order Progress Tracker */}
+      <div className="bg-white rounded-3xl border border-stone-200 p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+            Order Progress
+          </span>
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+            {order.status === "DELIVERED"
+              ? "Delivered"
+              : order.status === "OUT_FOR_DELIVERY"
+              ? "Out for Delivery"
+              : order.status === "CONFIRMED" || order.status === "PREPARING"
+              ? "Confirmed & Preparing"
+              : "Order Placed"}
+          </span>
+        </div>
+
+        {/* Horizontal Progress Bar with Steps */}
+        <div className="grid grid-cols-4 gap-2 relative">
+          {[
+            {
+              label: "Order Placed",
+              completed: true,
+              step: 1,
+            },
+            {
+              label: "Order Confirmed",
+              completed: ["CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED"].includes(order.status),
+              step: 2,
+            },
+            {
+              label: "Out for Delivery",
+              completed: ["OUT_FOR_DELIVERY", "DELIVERED"].includes(order.status),
+              step: 3,
+            },
+            {
+              label: "Delivered",
+              completed: order.status === "DELIVERED",
+              step: 4,
+            },
+          ].map((s) => (
+            <div key={s.step} className="flex flex-col items-center text-center space-y-1.5">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  s.completed
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-stone-100 text-stone-400 border border-stone-200"
+                }`}
+              >
+                {s.completed ? <Check className="w-4 h-4 stroke-[3]" /> : s.step}
+              </div>
+              <span
+                className={`text-[10px] sm:text-xs leading-tight ${
+                  s.completed ? "font-bold text-stone-900" : "text-stone-400 font-medium"
+                }`}
+              >
+                {s.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. What's Next Information Card */}
       <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5 shadow-2xs">
         <div className="p-2 rounded-xl bg-emerald-600 text-white shrink-0 mt-0.5">
           <Truck className="w-5 h-5" />
         </div>
         <div className="space-y-1">
           <h2 className="text-xs sm:text-sm font-bold text-emerald-950">
-            Your order has been received. We will update you when it is confirmed and dispatched.
+            What&apos;s next?
           </h2>
-          <p className="text-xs text-emerald-800 leading-relaxed flex items-center gap-1.5">
+          <p className="text-xs text-emerald-900 leading-relaxed">
+            Your order has been received. We&apos;ll update you when it is confirmed and dispatched.
+          </p>
+          <p className="text-xs text-emerald-800 leading-relaxed flex items-center gap-1.5 pt-0.5">
             <Clock className="w-3.5 h-3.5 shrink-0" />
             <span>Target doorstep delivery: ~20 minutes from store confirmation in Mulbagal</span>
           </p>

@@ -36,39 +36,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, loading, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Automatically attach Bearer token and credentials to all admin fetch requests
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const originalFetch = window.fetch;
-      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-        const urlStr =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-            ? input.toString()
-            : input.url;
-
-        if (urlStr.includes("/api/")) {
-          const token = localStorage.getItem("fc_token");
-          const headers = new Headers(init?.headers);
-          if (token && !headers.has("Authorization")) {
-            headers.set("Authorization", `Bearer ${token}`);
-          }
-          return originalFetch(input, {
-            ...init,
-            credentials: init?.credentials || "include",
-            headers,
-          });
-        }
-        return originalFetch(input, init);
-      };
-
-      return () => {
-        window.fetch = originalFetch;
-      };
-    }
-  }, []);
-
   // If loading without cached user, show initial verification state
   if (loading && !user) {
     return (
@@ -262,10 +229,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-cream-200">
               <div className="w-7 h-7 rounded-full bg-charcoal-500 text-cream-50 text-xs font-bold flex items-center justify-center">
-                {user.name.charAt(0).toUpperCase()}
+                {(user?.name || user?.mobile || "A").charAt(0).toUpperCase()}
               </div>
               <span className="text-xs font-semibold text-charcoal-700 hidden md:inline">
-                {user.name}
+                {user?.name || user?.mobile || "Admin"}
               </span>
             </div>
           </div>

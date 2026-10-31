@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/Badge";
@@ -22,10 +24,12 @@ import {
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      setErrorMessage(null);
       const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
       const res = await fetch("/api/admin/dashboard", {
         headers: {
@@ -37,9 +41,13 @@ export default function AdminDashboardPage() {
       if (res.ok) {
         const json = await res.json();
         setData(json);
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        setErrorMessage(errJson.error || `Unable to load metrics (HTTP ${res.status})`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setErrorMessage(e?.message || "Failed to connect to backend service");
     } finally {
       setLoading(false);
     }
@@ -53,8 +61,25 @@ export default function AdminDashboardPage() {
 
   if (loading && !data) {
     return (
-      <div className="py-16 text-center text-xs text-charcoal-400">
-        Loading real-time operational metrics...
+      <div className="py-24 text-center space-y-3">
+        <div className="w-8 h-8 rounded-full border-2 border-amberGold-500 border-t-transparent animate-spin mx-auto" />
+        <p className="text-xs text-charcoal-500 font-mono">Loading real-time operational metrics...</p>
+      </div>
+    );
+  }
+
+  if (errorMessage && !data) {
+    return (
+      <div className="py-16 max-w-md mx-auto text-center space-y-4 bg-cream-50 p-6 rounded-2xl border border-cream-200">
+        <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+        <h3 className="font-serif text-base font-bold text-charcoal-800">Operational Metrics Unavailable</h3>
+        <p className="text-xs text-charcoal-500 leading-relaxed">{errorMessage}</p>
+        <Button variant="primary" size="sm" onClick={fetchDashboardData} className="mx-auto">
+          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+          Retry Connection
+        </Button>
       </div>
     );
   }
@@ -360,7 +385,7 @@ export default function AdminDashboardPage() {
                     <span className="text-[10px] text-charcoal-400">{ord.user?.mobile}</span>
                   </td>
                   <td className="py-3 px-2 text-charcoal-600">
-                    {ord.items.length} item(s)
+                    {ord.items?.length || 0} item(s)
                   </td>
                   <td className="py-3 px-2 font-mono font-bold text-charcoal-800">
                     ₹{(ord.totalMinor / 100).toFixed(0)}

@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     if (existing) {
       return NextResponse.json(
-        { error: "An account with this mobile number or email already exists." },
+        { error: "An account with this mobile number or email already exists. Please sign in with your password." },
         { status: 409 }
       );
     }
@@ -67,8 +67,10 @@ export async function POST(req: NextRequest) {
     const passwordHash = await hashPassword(password);
     const sanitizedAddr = sanitizeAddress(rawAddress);
 
-    const adminMobile = (process.env.ADMIN_MOBILE || "7022461700").trim();
-    const role = mobile === adminMobile ? "ADMIN" : "CUSTOMER";
+    const adminMobiles = (process.env.ADMIN_MOBILE || "7022461700,9844797374")
+      .split(",")
+      .map((m) => m.trim().replace(/\D/g, "").slice(-10));
+    const role = adminMobiles.includes(mobile.slice(-10)) ? "ADMIN" : "CUSTOMER";
 
     const user = await prisma.user.create({
       data: {

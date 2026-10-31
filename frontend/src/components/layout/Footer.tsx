@@ -82,7 +82,7 @@ export const Footer: React.FC = () => {
           <div className="space-y-4">
             <Logo variant="light" size="md" />
             <p className="text-xs text-charcoal-50 leading-relaxed">
-              Mulbagal&apos;s trusted online destination for farm fresh chicken cuts, fresh fish, and daily essential groceries. Powered by our Srinivaspur Road express fulfillment center.
+              Mulbagal&apos;s trusted local source for farm-fresh halal chicken cuts and farm eggs. Prepared hygienically at our Srinivaspur Road express hub.
             </p>
             <div className="space-y-1.5 text-xs text-cream-200">
               <p className="flex items-center gap-2">
@@ -172,7 +172,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-xs text-charcoal-50">
               <li>
                 <Link href="/privacy-policy" className="hover:text-cream-50 transition-colors">
-                  Privacy Policy (DPDP Act)
+                  Privacy Policy
                 </Link>
               </li>
               <li>

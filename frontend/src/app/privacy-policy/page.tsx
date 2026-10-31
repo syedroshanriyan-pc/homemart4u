@@ -35,7 +35,7 @@ export default function PrivacyPolicyPage() {
             <span className="text-amberGold-600">1.</span> Introduction &amp; Legal Identity
           </h2>
           <p>
-            HomeMart4U (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) operates the e-commerce storefront for fresh chicken cuts, halal meats, and daily household groceries serving Mulbagal, Karnataka. We are committed to safeguarding your privacy in strict adherence to the <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong>, the <strong>DPDP Rules, 2025</strong>, and the <strong>Information Technology Act, 2000</strong>.
+            HomeMart4U (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) operates the e-commerce storefront for fresh chicken cuts and farm eggs serving Mulbagal, Karnataka. We are committed to safeguarding your privacy in strict adherence to the <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong>, the <strong>DPDP Rules, 2025</strong>, and the <strong>Information Technology Act, 2000</strong>.
           </p>
           <p>
             This Privacy Policy explains what personal data (as a &ldquo;Data Principal&rdquo;) you provide to us, how we process it, the legal basis of processing, retention timelines, and your statutory rights to access, rectify, and erase your personal data.
@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage() {
             <span className="text-amberGold-600">2.</span> Categories of Personal Data Collected
           </h2>
           <p>
-            We collect only the minimum personal data strictly necessary to fulfill your grocery and fresh meat orders:
+            We collect only the minimum personal data strictly necessary to fulfill your fresh chicken and egg orders:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div className="p-3.5 rounded-xl bg-cream-50 border border-cream-200">

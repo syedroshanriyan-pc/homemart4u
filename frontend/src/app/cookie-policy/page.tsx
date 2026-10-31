@@ -56,13 +56,13 @@ export default function CookiePolicyPage() {
                 <tr className="bg-white">
                   <td className="p-3 font-mono font-bold text-charcoal-800">fc_token</td>
                   <td className="p-3">HTTP Cookie (HttpOnly, Secure, SameSite=Lax)</td>
-                  <td className="p-3 text-charcoal-600">Strictly essential cryptographic JWT token used to keep you signed in securely.</td>
+                  <td className="p-3 text-charcoal-600">Essential session token used to keep you signed in securely.</td>
                   <td className="p-3">7 Days</td>
                 </tr>
                 <tr className="bg-cream-50">
                   <td className="p-3 font-mono font-bold text-charcoal-800">cart_items</td>
                   <td className="p-3">Browser LocalStorage</td>
-                  <td className="p-3 text-charcoal-600">Maintains your grocery and meat items in the cart while you browse different departments.</td>
+                  <td className="p-3 text-charcoal-600">Maintains your selected chicken and egg items in the cart while you browse.</td>
                   <td className="p-3">Persistent until cleared</td>
                 </tr>
                 <tr className="bg-white">

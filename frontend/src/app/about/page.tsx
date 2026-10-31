@@ -6,7 +6,7 @@ import { Sparkles, ShieldCheck, CheckCircle2, Heart, Award, ArrowRight } from "l
 
 export const metadata = {
   title: "About Us | homemart4u Mulbagal",
-  description: "Learn about homemart4u's biosecure poultry sourcing, daily artisanal cuts, essential groceries, and zero-chemical freshness philosophy in Mulbagal.",
+  description: "Learn about homemart4u's biosecure poultry sourcing, fresh chicken cuts, farm eggs, and zero-chemical freshness philosophy in Mulbagal.",
 };
 
 export default function AboutPage() {
@@ -15,13 +15,13 @@ export default function AboutPage() {
       {/* Hero */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <span className="text-xs uppercase font-semibold text-amberGold-600 tracking-wider">
-          Our Craft & Commitment
+          Our Craft &amp; Commitment
         </span>
         <h1 className="font-serif text-3xl sm:text-5xl font-medium text-charcoal-700 leading-tight">
-          Bringing Daily Essentials &amp; Pure Fresh Meats to Mulbagal
+          Fresh Chicken Cuts &amp; Farm Eggs Delivered in Mulbagal
         </h1>
         <p className="text-xs sm:text-sm text-charcoal-500 leading-relaxed font-light">
-          Founded with a singular mission: to eliminate stagnant chiller meat and provide our community with authentic, farm-fresh tender halal chicken and daily groceries prepared under the highest standards of culinary hygiene.
+          Founded with a singular mission: to eliminate cold-storage frozen meats and provide our community with authentic, farm-fresh tender halal chicken and farm eggs prepared under the highest standards of hygiene.
         </p>
       </div>
 

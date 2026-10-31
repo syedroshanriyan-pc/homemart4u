@@ -301,11 +301,11 @@ export default function CheckoutPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-stone-900">
-                    Homemart4u Pay (Dynamic UPI QR) or Cash at Doorstep
+                    Cash on Delivery &bull; Homemart4u Pay (Dynamic UPI QR)
                   </span>
                 </div>
                 <p className="text-[11px] text-stone-600 leading-relaxed">
-                  No online payment is required right now. Pay when your fresh chicken or eggs reach your doorstep in Mulbagal. You can pay via physical cash or request your assigned delivery partner to generate a dynamic UPI QR code on arrival.
+                  No advance online payment is required. Pay when your fresh chicken or eggs reach your doorstep in Mulbagal. You can pay with physical cash or scan the delivery partner&apos;s UPI QR code upon arrival.
                 </p>
               </div>
             </div>

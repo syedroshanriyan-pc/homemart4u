@@ -70,24 +70,20 @@ When you place an order on homemart4u:
     },
     {
       id: 3,
-      title: "Daily Kitchen Essentials: Combining Fresh Meats & Groceries in One Order",
-      slug: "daily-groceries-and-fresh-meats-mulbagal",
-      date: "Smart Shopping",
+      title: "Farm-Fresh Eggs: Daily Nutrition and Quality Sourcing in Mulbagal",
+      slug: "farm-fresh-eggs-daily-nutrition-mulbagal",
+      date: "Farm Quality",
       readTime: "3 min read",
-      category: "Groceries & Savings",
+      category: "Eggs & Nutrition",
       excerpt:
-        "Skip the congested bazaar trips and multiple delivery fees. homemart4u delivers farm-fresh poultry, fresh fish, farm eggs, daily milk, chakki atta, and spices together in under 20 minutes.",
-      content: `Why make three different stops at the butcher, dairy stall, and grocery store when homemart4u brings everything together from our local Srinivaspur Road distribution center?
+        "Clean-shelled, fresh farm eggs and country desi eggs collected daily and delivered straight to your home in Mulbagal without long warehouse storage.",
+      content: `At homemart4u, we ensure our eggs are truly fresh from local poultry farms:
 
-Our curated grocery catalog features:
-• Farm Fresh Eggs & Nandini Dairy Milk / Butter
-• Premium Chakki Whole Wheat Atta & Sona Masoori / Basmati Rice
-• Pure Desi Ghee & Refined Cooking Oils
-• Freshly Ground Turmeric, Biryani Spices & Masala Pastes
-• Daily Fresh Farm Vegetables & Cooking Staples
-
-Every order qualifies for our transparent distance-based delivery, with the first 3 kilometers completely free!`,
-      imageUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80",
+• Daily Farm Collection: Eggs are collected daily from verified local farms to preserve freshness and nutrition.
+• Graded & Clean-Shelled: Every egg is carefully inspected for intact shells and cleanliness.
+• Protective Packaging: Packed in secure, cushioned egg trays to prevent damage during transit.
+• Fast Doorstep Delivery: Delivered along with your fresh chicken cuts in ~20 minutes across Mulbagal.`,
+      imageUrl: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=800&q=80",
     },
   ];
 
@@ -108,27 +104,27 @@ Every order qualifies for our transparent distance-based delivery, with the firs
               </div>
 
               <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-white leading-[1.15]">
-                Fresh Groceries &amp;{" "}
+                Fresh Chicken &amp;{" "}
                 <span className="italic font-serif text-amber-300">
-                  Artisanal Halal Meats,
+                  Farm Eggs,
                 </span>{" "}
                 Delivered in ~20 Minutes.
               </h1>
 
               <p className="text-sm sm:text-base text-stone-300 max-w-2xl leading-relaxed font-sans font-light">
-                Welcome to <strong>homemart4u</strong>. We bring the freshest farm-cut chicken, pure daily dairy, chakki atta, pulses, and pantry essentials directly from our Srinivaspur Road express hub to your home across Mulbagal.
+                Welcome to <strong>homemart4u</strong>. We deliver farm-fresh, hygienically portioned halal chicken cuts and farm eggs directly from our Srinivaspur Road hub to your home across Mulbagal.
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 {onEnterStore ? (
                   <Button
-                    onClick={() => onEnterStore("GROCERIES")}
+                    onClick={() => onEnterStore("MEAT")}
                     variant="primary"
                     size="lg"
                     className="bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-xl shadow-rose-600/30 hover:scale-[1.02] active:scale-[0.98] transition-transform"
                   >
-                    <span>Explore Groceries &amp; Meat</span>
+                    <span>Shop Chicken &amp; Eggs</span>
                     <ArrowRight className="w-4 h-4 ml-1.5" />
                   </Button>
                 ) : (
@@ -138,7 +134,7 @@ Every order qualifies for our transparent distance-based delivery, with the firs
                       size="lg"
                       className="bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-xl shadow-rose-600/30 hover:scale-[1.02] active:scale-[0.98] transition-transform"
                     >
-                      <span>Explore Groceries &amp; Meat</span>
+                      <span>Shop Chicken &amp; Eggs</span>
                       <ArrowRight className="w-4 h-4 ml-1.5" />
                     </Button>
                   </Link>
@@ -174,8 +170,8 @@ Every order qualifies for our transparent distance-based delivery, with the firs
             <div className="lg:col-span-5 relative">
               <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border border-stone-800 bg-stone-900">
                 <Image
-                  src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=85"
-                  alt="homemart4u Fresh Groceries & Halal Chicken Mulbagal"
+                  src="https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=800&q=85"
+                  alt="homemart4u Fresh Halal Chicken & Eggs Mulbagal"
                   fill
                   priority
                   className="object-cover"
@@ -186,7 +182,7 @@ Every order qualifies for our transparent distance-based delivery, with the firs
                     <p className="text-[10px] uppercase font-bold text-amber-300 tracking-wider">
                       Daily Fresh Stock
                     </p>
-                    <p className="text-sm font-serif font-medium">Groceries &amp; Poultry Ready</p>
+                    <p className="text-sm font-serif font-medium">Chicken &amp; Eggs Ready</p>
                   </div>
                   <div className="text-right">
                     <span className="text-xs text-stone-300">Hub Delivery</span>
@@ -203,43 +199,18 @@ Every order qualifies for our transparent distance-based delivery, with the firs
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="text-xs uppercase font-bold text-rose-600 tracking-wider">
-            Shop by Department
+            Shop Fresh Categories
           </span>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-1">
-            Choose What You Need Today
+            Choose Chicken Cuts or Farm Eggs
           </h2>
           <p className="text-xs text-stone-500 mt-1.5">
-            Switch anytime with our instant swipe interface or tap below to dive straight in.
+            Prepared fresh upon your order from our Srinivaspur Road hub in Mulbagal.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Groceries Card */}
-          <div
-            onClick={() => onEnterStore && onEnterStore("GROCERIES")}
-            className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 text-white p-7 sm:p-8 shadow-card border border-emerald-700/50 hover:shadow-xl transition-all"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 text-xs font-bold border border-emerald-400/30">
-                ⚡ Daily Essentials
-              </span>
-              <span className="text-2xl">🛒</span>
-            </div>
-
-            <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-white group-hover:text-amber-200 transition-colors">
-              Daily Groceries
-            </h3>
-            <p className="text-xs sm:text-sm text-emerald-100/90 mt-2 leading-relaxed">
-              Dairy milk, curd, fresh chakki atta, branded basmati rice, cold-pressed oils, pure desi ghee, and farm vegetables at transparent discounted prices.
-            </p>
-
-            <div className="mt-6 flex items-center gap-2 text-xs font-bold text-amber-300 group-hover:translate-x-1 transition-transform">
-              <span>Browse All Groceries</span>
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </div>
-
-          {/* Fresh Meat Card */}
+          {/* Fresh Halal Chicken Card */}
           <div
             onClick={() => onEnterStore && onEnterStore("MEAT")}
             className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-stone-900 via-rose-950 to-stone-900 text-white p-7 sm:p-8 shadow-card border border-rose-800/40 hover:shadow-xl transition-all"
@@ -253,14 +224,39 @@ Every order qualifies for our transparent distance-based delivery, with the firs
             </div>
 
             <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-white group-hover:text-amber-200 transition-colors">
-              Farm Fresh Meats
+              Fresh Chicken Cuts
             </h3>
             <p className="text-xs sm:text-sm text-stone-200 mt-2 leading-relaxed">
-              Curry cuts, biryani cuts, boneless breasts, drumsticks, fresh fish, and farm eggs prepared hygienically upon order with zero cold storage freezing.
+              Curry cuts, biryani cuts, boneless breasts, and drumsticks portioned cleanly upon order with zero cold-storage freezing.
             </p>
 
             <div className="mt-6 flex items-center gap-2 text-xs font-bold text-amber-300 group-hover:translate-x-1 transition-transform">
-              <span>Browse Fresh Meat Cuts</span>
+              <span>Browse Chicken Cuts</span>
+              <ArrowRight className="w-4 h-4" />
+            </div>
+          </div>
+
+          {/* Farm-Fresh Eggs Card */}
+          <div
+            onClick={() => onEnterStore && onEnterStore("MEAT")}
+            className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-amber-950 via-stone-900 to-amber-950 text-white p-7 sm:p-8 shadow-card border border-amber-800/40 hover:shadow-xl transition-all"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-200 text-xs font-bold border border-amber-400/30">
+                🥚 Daily Collected
+              </span>
+              <span className="text-2xl">🥚</span>
+            </div>
+
+            <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-white group-hover:text-amber-200 transition-colors">
+              Farm-Fresh Eggs
+            </h3>
+            <p className="text-xs sm:text-sm text-stone-200 mt-2 leading-relaxed">
+              Carefully graded table eggs and country desi eggs packed in protective trays for safe doorstep delivery.
+            </p>
+
+            <div className="mt-6 flex items-center gap-2 text-xs font-bold text-amber-300 group-hover:translate-x-1 transition-transform">
+              <span>Browse Fresh Eggs</span>
               <ArrowRight className="w-4 h-4" />
             </div>
           </div>
@@ -413,11 +409,11 @@ Every order qualifies for our transparent distance-based delivery, with the firs
           </div>
 
           <h2 className="font-serif text-3xl sm:text-4xl font-extrabold max-w-xl mx-auto">
-            Order Fresh Meat &amp; Daily Groceries in Seconds
+            Order Fresh Chicken &amp; Eggs in Seconds
           </h2>
 
           <p className="text-xs sm:text-sm text-stone-300 max-w-lg mx-auto">
-            Experience our dynamic UPI QR payment with instant automated verification and rapid doorstep fulfillment.
+            Enjoy convenient Cash on Delivery and express ~20-minute doorstep delivery across Mulbagal.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-2">
@@ -428,7 +424,7 @@ Every order qualifies for our transparent distance-based delivery, with the firs
                 size="lg"
                 className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-xl shadow-rose-600/40 hover:scale-[1.02] active:scale-[0.98] transition-transform"
               >
-                <span>Enter Online Store</span>
+                <span>Shop Chicken &amp; Eggs</span>
                 <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
             ) : (
@@ -438,7 +434,7 @@ Every order qualifies for our transparent distance-based delivery, with the firs
                   size="lg"
                   className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-xl shadow-rose-600/40 hover:scale-[1.02] active:scale-[0.98] transition-transform"
                 >
-                  <span>Enter Online Store</span>
+                  <span>Shop Chicken &amp; Eggs</span>
                   <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
               </Link>

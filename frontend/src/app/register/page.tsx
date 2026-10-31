@@ -223,15 +223,15 @@ function RegisterForm() {
               />
             </div>
 
-            {/* DPDP Act 2023 Consent & Notice */}
+            {/* Privacy Policy Consent & Notice */}
             <p className="text-[11px] text-charcoal-500 text-center leading-relaxed px-1">
               By creating an account, you agree to our{" "}
               <Link href="/terms-and-conditions" className="text-amberGold-600 underline font-medium" target="_blank">
                 Terms
               </Link>{" "}
-              and consent to the processing of your delivery data under our{" "}
+              and acknowledge our{" "}
               <Link href="/privacy-policy" className="text-amberGold-600 underline font-medium" target="_blank">
-                Privacy Policy (DPDP Act)
+                Privacy Policy
               </Link>.
             </p>
 

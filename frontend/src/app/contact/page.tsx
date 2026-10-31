@@ -31,7 +31,7 @@ export default function ContactPage() {
           Get in Touch with homemart4u
         </h1>
         <p className="text-xs sm:text-sm text-charcoal-500">
-          Have a question about fresh meats, daily groceries, or express delivery service in Mulbagal? We&apos;re here to assist.
+          Have a question about fresh chicken cuts, farm eggs, or express delivery service in Mulbagal? We&apos;re here to assist.
         </p>
       </div>
 

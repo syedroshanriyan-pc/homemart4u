@@ -15,7 +15,7 @@ const globalForRateLimiter = globalThis as unknown as {
 const prisma = globalForRateLimiter.prismaRateLimiter ?? new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DIRECT_URL || process.env.DATABASE_URL,
+      url: process.env.DATABASE_URL || process.env.DIRECT_URL,
     },
   },
 });

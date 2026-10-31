@@ -189,7 +189,8 @@ export async function POST(req: NextRequest) {
       deliveryAddressObj = await prisma.address.findFirst({
         where: { id: addressId, userId: session.id },
       });
-    } else if (customAddress && customAddress.addressLine) {
+    }
+    if (!deliveryAddressObj && customAddress && customAddress.addressLine) {
       deliveryAddressObj = sanitizeAddress(customAddress);
     }
 

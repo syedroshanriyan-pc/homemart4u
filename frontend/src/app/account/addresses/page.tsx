@@ -15,7 +15,14 @@ export default function AddressesPage() {
     if (!confirm("Are you sure you want to delete this address?")) return;
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/me/addresses/${id}`, { method: "DELETE" });
+      const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
+      const res = await fetch(`/api/me/addresses/${id}`, {
+        method: "DELETE",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
       if (res.ok) {
         await refreshUser();
       }

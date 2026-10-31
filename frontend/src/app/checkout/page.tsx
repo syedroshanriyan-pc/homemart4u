@@ -119,9 +119,14 @@ export default function CheckoutPage() {
   
   const handleSwitchToCod = async (orderIdToSwitch: string) => {
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
       const switchRes = await fetch(`/api/orders/${orderIdToSwitch}/switch-cod`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
       });
       const switchData = await switchRes.json().catch(() => ({}));
       if (switchRes.ok && switchData.success) {
@@ -160,25 +165,28 @@ export default function CheckoutPage() {
           quantity: i.quantity,
           customizations: i.customizations,
         })),
-        addressId: selectedAddress.id && !selectedAddress.id.startsWith("guest_") ? selectedAddress.id : undefined,
-        customAddress: (!selectedAddress.id || selectedAddress.id.startsWith("guest_"))
-          ? {
-              label: selectedAddress.label || "Home",
-              addressLine: selectedAddress.addressLine,
-              locality: selectedAddress.locality || "Mulbagal",
-              city: "Mulbagal",
-              latitude: selectedAddress.latitude,
-              longitude: selectedAddress.longitude,
-            }
-          : undefined,
+        addressId: selectedAddress.id && !selectedAddress.id.startsWith("guest_") && !selectedAddress.id.startsWith("addr_") && !selectedAddress.id.startsWith("local_") ? selectedAddress.id : undefined,
+        customAddress: {
+          label: selectedAddress.label || "Home",
+          addressLine: selectedAddress.addressLine,
+          locality: selectedAddress.locality || "Mulbagal",
+          city: "Mulbagal",
+          latitude: selectedAddress.latitude,
+          longitude: selectedAddress.longitude,
+        },
         couponCode: couponCode || undefined,
         paymentMethod: "COD",
         notes: notes.trim() || undefined,
       };
 
+      const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 

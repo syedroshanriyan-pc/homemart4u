@@ -26,6 +26,8 @@ import {
   Menu,
   X,
   ExternalLink,
+  Shield,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -67,26 +69,72 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push("/login?redirect=/admin");
-      } else if (user.role !== "ADMIN") {
-        router.push("/");
-      }
-    }
-  }, [user, loading, router]);
-
-  if (loading) {
+  // If loading without cached user, show initial verification state
+  if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-charcoal-700 text-cream-100 text-xs font-mono">
-        Verifying administrative authorization...
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-amberGold-400 border-t-transparent animate-spin" />
+          <span>Verifying administrative authorization...</span>
+        </div>
       </div>
     );
   }
 
-  if (!user || user.role !== "ADMIN") {
-    return null;
+  // If unauthenticated, show clean admin sign-in prompt instead of bouncing
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-charcoal-700 p-4">
+        <div className="max-w-md w-full bg-charcoal-600 border border-charcoal-500 rounded-3xl p-6 sm:p-8 text-center space-y-4 text-cream-100 shadow-xl">
+          <div className="w-14 h-14 rounded-2xl bg-amberGold-500/20 text-amberGold-400 flex items-center justify-center mx-auto border border-amberGold-500/30">
+            <Shield className="w-7 h-7" />
+          </div>
+          <h2 className="font-serif text-xl font-bold">Admin Sign In Required</h2>
+          <p className="text-xs text-charcoal-200 leading-relaxed">
+            Please sign in with your authorized administrator credentials to access the Homemart4u operations portal.
+          </p>
+          <div className="pt-2">
+            <a
+              href="/login?redirect=/admin"
+              className="inline-flex items-center justify-center w-full py-3 px-4 bg-amberGold-500 hover:bg-amberGold-600 text-charcoal-900 rounded-xl font-bold text-xs shadow-md transition"
+            >
+              Sign In to Admin Portal
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If signed in as non-admin (e.g. CUSTOMER), show clear privilege requirement card
+  if (user.role !== "ADMIN") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-charcoal-700 p-4">
+        <div className="max-w-md w-full bg-charcoal-600 border border-charcoal-500 rounded-3xl p-6 sm:p-8 text-center space-y-4 text-cream-100 shadow-xl">
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/30">
+            <AlertTriangle className="w-7 h-7" />
+          </div>
+          <h2 className="font-serif text-xl font-bold">Administrative Privileges Required</h2>
+          <p className="text-xs text-charcoal-200 leading-relaxed">
+            You are currently signed in as <span className="font-bold text-white">{user.name || user.mobile}</span> with account role <span className="font-mono bg-charcoal-500 px-1.5 py-0.5 rounded text-amberGold-300 font-bold">{user.role}</span>. This portal requires the <span className="text-amberGold-400 font-bold">ADMIN</span> role.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            <a
+              href="/login?redirect=/admin"
+              className="flex-1 py-2.5 px-4 bg-amberGold-500 hover:bg-amberGold-600 text-charcoal-900 rounded-xl font-bold text-xs transition text-center shadow-sm"
+            >
+              Switch to Admin Account
+            </a>
+            <Link
+              href="/"
+              className="flex-1 py-2.5 px-4 bg-charcoal-500 hover:bg-charcoal-400 text-white rounded-xl font-bold text-xs transition text-center"
+            >
+              Back to Storefront
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const navItems = [

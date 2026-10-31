@@ -32,13 +32,20 @@ class ApiError extends Error {
 function resolveUrl(endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   
-  let baseUrl = API_BASE_URL;
-  if (!baseUrl && typeof window !== "undefined") {
-    // Relative URL handled by Next.js rewrites on Vercel
+  let baseUrl = "";
+  if (typeof window === "undefined") {
+    // Server-side (SSR / SSG / Edge): route directly to backend
+    baseUrl =
+      process.env.RENDER_BACKEND_URL ||
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      "https://homemart4u-backend.onrender.com";
+  } else {
+    // Client-side (Browser): always use same-origin relative /api/*
+    // which Next.js rewrites to the backend. This guarantees:
+    // 1. First-party cookies work seamlessly on vercel.app
+    // 2. Zero cross-origin CORS or SameSite=None cookie blocking
+    // 3. Page navigations like /admin send the exact same auth cookies
     baseUrl = "";
-  } else if (!baseUrl) {
-    // Server-side fallback default
-    baseUrl = "https://homemart4u-backend.onrender.com";
   }
 
   const normalizedBase = baseUrl.replace(/\/$/, "");
@@ -88,10 +95,10 @@ export async function apiRequest<T = any>(
   let timeoutId: any = null;
   if (!signal) {
     if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
-      signal = AbortSignal.timeout(5000);
+      signal = AbortSignal.timeout(30000); // 30s timeout to accommodate cold starts
     } else {
       const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 5000);
+      timeoutId = setTimeout(() => controller.abort(), 30000);
       signal = controller.signal;
     }
   }

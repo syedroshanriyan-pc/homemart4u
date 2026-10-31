@@ -7,8 +7,8 @@ import { sanitizeText, sanitizeMobile, sanitizeEmail, sanitizeAddress } from "@/
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req);
-    // Rate limit: max 5 registrations per minute per IP
-    const rateLimit = checkRateLimit(`register:${ip}`, { maxRequests: 5, windowMs: 60 * 1000 });
+    // Rate limit: max 30 registrations per minute per IP
+    const rateLimit = checkRateLimit(`register:${ip}`, { maxRequests: 30, windowMs: 60 * 1000 });
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
@@ -67,13 +67,16 @@ export async function POST(req: NextRequest) {
     const passwordHash = await hashPassword(password);
     const sanitizedAddr = sanitizeAddress(rawAddress);
 
+    const adminMobile = (process.env.ADMIN_MOBILE || "7022461700").trim();
+    const role = mobile === adminMobile ? "ADMIN" : "CUSTOMER";
+
     const user = await prisma.user.create({
       data: {
         name,
         mobile,
         email: email || null,
         passwordHash,
-        role: "CUSTOMER",
+        role,
         addresses: sanitizedAddr
           ? {
               create: {
@@ -121,7 +124,7 @@ export async function POST(req: NextRequest) {
       value: token,
       httpOnly: true,
       secure: isHttps,
-      sameSite: "lax",
+      sameSite: isHttps ? "none" : "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
     });

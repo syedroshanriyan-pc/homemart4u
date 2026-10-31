@@ -7,8 +7,8 @@ import { sanitizeText } from "@/lib/security";
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req);
-    // Rate limit: max 5 login requests per minute per IP
-    const rateLimit = checkRateLimit(`login:${ip}`, { maxRequests: 5, windowMs: 60 * 1000 });
+    // Rate limit: max 30 login requests per minute per IP
+    const rateLimit = checkRateLimit(`login:${ip}`, { maxRequests: 30, windowMs: 60 * 1000 });
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
@@ -37,15 +37,17 @@ export async function POST(req: NextRequest) {
     }
 
     const identifier = sanitizeText(rawIdentifier, 100).trim();
-    // Normalize mobile if phone format was passed (+91 70224 61700 -> 7022461700)
-    const digitsOnly = identifier.replace(/[^\d+]/g, "").replace(/^\+91/, "").replace(/\D/g, "");
+    // Normalize mobile for all phone formats (+91 70224 61700, 07022461700, 917022461700, 7022461700)
+    const digitsOnly = identifier.replace(/\D/g, "");
 
     const orConditions: any[] = [
       { mobile: identifier },
       { email: { equals: identifier, mode: "insensitive" } },
     ];
-    if (digitsOnly && digitsOnly.length === 10) {
+    if (digitsOnly.length === 10) {
       orConditions.push({ mobile: digitsOnly });
+    } else if (digitsOnly.length > 10) {
+      orConditions.push({ mobile: digitsOnly.slice(-10) });
     }
 
     const user = await prisma.user.findFirst({
@@ -114,7 +116,7 @@ export async function POST(req: NextRequest) {
       value: token,
       httpOnly: true,
       secure: isHttps,
-      sameSite: "lax",
+      sameSite: isHttps ? "none" : "lax",
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     });

@@ -52,8 +52,27 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("fc_user");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const hasToken = localStorage.getItem("fc_token");
+        const hasUser = localStorage.getItem("fc_user");
+        if (hasToken && hasUser) return false;
+      } catch {}
+    }
+    return true;
+  });
+
   const [isNetworkError, setIsNetworkError] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
 
@@ -75,8 +94,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
         });
 
-        setUser(data.user || null);
-        setIsNetworkError(false);
+        if (data.user) {
+          setUser(data.user);
+          setIsNetworkError(false);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("fc_user", JSON.stringify(data.user));
+            } catch {}
+          }
+        }
 
         if (data.token && typeof window !== "undefined") {
           try {
@@ -99,10 +125,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (typeof window !== "undefined") {
             try {
               localStorage.removeItem("fc_token");
+              localStorage.removeItem("fc_user");
+              document.cookie = "fc_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
             } catch {}
           }
         } else {
-          // 5xx Server error or network error: preserve current user session, mark network issue
+          // 5xx Server error, network error or timeout: preserve current cached session so user is not kicked out
           setIsNetworkError(true);
         }
       } finally {
@@ -165,9 +193,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await apiClient.post("/api/auth/login", { identifier, password: pass });
       setUser(data.user);
       setIsNetworkError(false);
-      if (data.token && typeof window !== "undefined") {
+      if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("fc_token", data.token);
+          if (data.token) localStorage.setItem("fc_token", data.token);
+          if (data.user) localStorage.setItem("fc_user", JSON.stringify(data.user));
           const isHttps = window.location.protocol === "https:";
           document.cookie = `fc_token=${data.token}; path=/; max-age=604800; SameSite=Lax; ${isHttps ? "Secure;" : ""}`;
         } catch {}
@@ -186,9 +215,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await apiClient.post("/api/auth/register", regData);
       setUser(data.user);
       setIsNetworkError(false);
-      if (data.token && typeof window !== "undefined") {
+      if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("fc_token", data.token);
+          if (data.token) localStorage.setItem("fc_token", data.token);
+          if (data.user) localStorage.setItem("fc_user", JSON.stringify(data.user));
           const isHttps = window.location.protocol === "https:";
           document.cookie = `fc_token=${data.token}; path=/; max-age=604800; SameSite=Lax; ${isHttps ? "Secure;" : ""}`;
         } catch {}
@@ -214,6 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (typeof window !== "undefined") {
         try {
           localStorage.removeItem("fc_token");
+          localStorage.removeItem("fc_user");
           document.cookie = "fc_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
         } catch {}
       }
@@ -229,6 +260,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (typeof window !== "undefined") {
         try {
           localStorage.removeItem("fc_token");
+          localStorage.removeItem("fc_user");
           localStorage.removeItem("fresh-chicken-cart-v1");
           localStorage.removeItem("fc_user_session");
         } catch {}

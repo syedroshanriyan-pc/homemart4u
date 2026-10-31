@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
       value: token,
       httpOnly: true,
       secure: isHttps,
-      sameSite: "lax",
+      sameSite: isHttps ? "none" : "lax",
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     });

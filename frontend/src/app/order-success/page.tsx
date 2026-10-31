@@ -3,6 +3,7 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useCart } from "@/context/CartContext";
 import {
   Package,
   MapPin,
@@ -23,15 +24,41 @@ function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderId = searchParams.get("orderId");
-  const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { clearCart } = useCart();
+
+  // Instant State: Load order from sessionStorage immediately if available
+  const [order, setOrder] = useState<any>(() => {
+    if (typeof window !== "undefined" && orderId) {
+      try {
+        const stored = sessionStorage.getItem("fc_latest_order");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.id === orderId || parsed.orderNumber === orderId)) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return null;
+  });
+
+  const [loading, setLoading] = useState<boolean>(() => !order);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Clear any lingering cart items upon landing on confirmation screen
+  useEffect(() => {
+    try {
+      clearCart();
+    } catch {}
+  }, [clearCart]);
+
   useEffect(() => {
     if (!orderId) {
-      setError("No order identifier was provided. If you placed an order, you can check its status in your order history.");
-      setLoading(false);
+      if (!order) {
+        setError("No order identifier was provided. If you placed an order, you can check its status in your order history.");
+        setLoading(false);
+      }
       return;
     }
 
@@ -43,23 +70,28 @@ function OrderSuccessContent() {
           credentials: "include",
         });
 
-        if (!res.ok) {
-          if (res.status === 401 || res.status === 403) {
-            throw new Error("You are not authorized to view this order. Please ensure you are logged into the correct account.");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.order) {
+            setOrder(data.order);
+            setError(null);
           }
-          if (res.status === 404) {
-            throw new Error("We could not find the specified order record. Please check your order history.");
+        } else {
+          // If we do not have an order yet, surface informative error
+          if (!order) {
+            if (res.status === 401 || res.status === 403) {
+              throw new Error("You are not authorized to view this order. Please ensure you are logged into the correct account.");
+            }
+            if (res.status === 404) {
+              throw new Error("We could not find the specified order record. Please check your order history.");
+            }
+            throw new Error("Unable to retrieve order details at this moment.");
           }
-          throw new Error("Unable to retrieve order details at this moment.");
         }
-
-        const data = await res.json();
-        if (!data.order) {
-          throw new Error("Order confirmation details could not be found.");
-        }
-        setOrder(data.order);
       } catch (err: any) {
-        setError(err.message || "Failed to load order confirmation.");
+        if (!order) {
+          setError(err.message || "Failed to load order confirmation.");
+        }
       } finally {
         setLoading(false);
       }

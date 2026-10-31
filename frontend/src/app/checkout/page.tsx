@@ -43,6 +43,7 @@ export default function CheckoutPage() {
     amountRupees: number;
   } | null>(null);
   const idempotencyKeyRef = useRef<string>("");
+  const isOrderPlacedRef = useRef(false);
 
   useEffect(() => {
     if (!idempotencyKeyRef.current) {
@@ -53,12 +54,12 @@ export default function CheckoutPage() {
     }
   }, []);
 
-  // Redirect if cart is empty
+  // Redirect if cart is empty (only when an order is not in progress or just completed)
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 && !isOrderPlacedRef.current && !isSubmitting) {
       router.push("/cart");
     }
-  }, [items, router]);
+  }, [items, router, isSubmitting]);
 
   // Wait for session verification before rendering prompt
   if (authLoading) {
@@ -130,9 +131,15 @@ export default function CheckoutPage() {
       });
       const switchData = await switchRes.json().catch(() => ({}));
       if (switchRes.ok && switchData.success) {
+        isOrderPlacedRef.current = true;
+        if (typeof window !== "undefined" && switchData.order) {
+          try {
+            sessionStorage.setItem("fc_latest_order", JSON.stringify(switchData.order));
+          } catch {}
+        }
         clearCart();
         setUpiOrderData(null);
-        router.push(`/order-success?orderId=${orderIdToSwitch}&method=COD`);
+        window.location.href = `/order-success?orderId=${orderIdToSwitch}&method=COD`;
       } else {
         setErrorMessage(switchData.error || "Failed to switch to COD.");
       }
@@ -198,9 +205,15 @@ export default function CheckoutPage() {
         return;
       }
 
-      // COD: clear cart and redirect to order confirmation
+      // COD: flag order placed, cache order for instant confirmation rendering, clear cart and redirect
+      isOrderPlacedRef.current = true;
+      if (typeof window !== "undefined" && data.order) {
+        try {
+          sessionStorage.setItem("fc_latest_order", JSON.stringify(data.order));
+        } catch {}
+      }
       clearCart();
-      router.push(`/order-success?orderId=${data.order.id}&method=COD`);
+      window.location.href = `/order-success?orderId=${data.order.id}&method=COD`;
     } catch {
       setErrorMessage("Network error placing order. Please try again.");
       setIsSubmitting(false);
@@ -440,9 +453,10 @@ export default function CheckoutPage() {
           onClose={() => setUpiOrderData(null)}
           onSwitchToCod={handleSwitchToCod}
           onSuccess={(finalOrderId) => {
+            isOrderPlacedRef.current = true;
             clearCart();
             setUpiOrderData(null);
-            router.push(`/order-success?orderId=${finalOrderId}&method=ONLINE`);
+            window.location.href = `/order-success?orderId=${finalOrderId}&method=ONLINE`;
           }}
         />
       )}

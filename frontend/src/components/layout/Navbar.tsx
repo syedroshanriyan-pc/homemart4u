@@ -269,13 +269,13 @@ export const Navbar: React.FC = () => {
                       </Link>
 
                       {(user.role === "ADMIN") && (
-                        <Link
+                        <a
                           href="/admin"
                           onClick={() => setIsUserMenuOpen(false)}
                           className="block px-4 py-2 text-xs font-bold text-amberGold-700 bg-amberGold-50 hover:bg-amberGold-100 border-t border-stone-100 transition-colors"
                         >
                           ⚙️ Admin Dashboard
-                        </Link>
+                        </a>
                       )}
 
                       {user.role === "DELIVERY_AGENT" && (
@@ -494,7 +494,7 @@ export const Navbar: React.FC = () => {
 
                 <div className="space-y-0.5">
                   {(user.role === "ADMIN") && (
-                    <Link
+                    <a
                       href="/admin"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="flex items-center justify-between px-3 py-2 text-xs font-bold text-amberGold-900 bg-amberGold-100 hover:bg-amberGold-200 border border-amberGold-300 rounded-xl transition my-1"
@@ -504,7 +504,7 @@ export const Navbar: React.FC = () => {
                         <span>Admin Operations Portal</span>
                       </div>
                       <span className="text-[10px] text-amberGold-800 font-mono">&rarr;</span>
-                    </Link>
+                    </a>
                   )}
 
                   <Link

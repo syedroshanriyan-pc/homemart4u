@@ -70,11 +70,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.removeItem("fc_token");
-          } catch {}
-        }
         router.push("/login?redirect=/admin");
       } else if (user.role !== "ADMIN") {
         router.push("/");

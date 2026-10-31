@@ -49,11 +49,6 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.removeItem("fc_token");
-          } catch {}
-        }
         router.push("/login?redirect=/delivery");
       } else if (user.role !== "DELIVERY_AGENT" && user.role !== "ADMIN") {
         router.push("/");

@@ -26,7 +26,14 @@ export default function AdminDashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/dashboard");
+      const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
+      const res = await fetch("/api/admin/dashboard", {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
       if (res.ok) {
         const json = await res.json();
         setData(json);

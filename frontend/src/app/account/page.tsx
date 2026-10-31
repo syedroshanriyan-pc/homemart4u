@@ -105,11 +105,11 @@ export default function AccountPage() {
               </p>
             </div>
           </div>
-          <Link href="/admin">
+          <a href="/admin">
             <Button variant="accent" size="sm">
               Open Admin &rarr;
             </Button>
-          </Link>
+          </a>
         </div>
       )}
 

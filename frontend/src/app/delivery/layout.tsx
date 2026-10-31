@@ -48,10 +48,14 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!loading) {
-      const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
-      if (!user && !token) {
+      if (!user) {
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.removeItem("fc_token");
+          } catch {}
+        }
         router.push("/login?redirect=/delivery");
-      } else if (user && user.role !== "DELIVERY_AGENT" && user.role !== "ADMIN") {
+      } else if (user.role !== "DELIVERY_AGENT" && user.role !== "ADMIN") {
         router.push("/");
       }
     }
@@ -75,9 +79,7 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
     }
   };
 
-  const hasToken = typeof window !== "undefined" ? !!localStorage.getItem("fc_token") : false;
-
-  if (loading || (!user && hasToken)) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-charcoal-800 text-cream-100 text-xs font-mono">
         Authenticating Delivery Fleet...

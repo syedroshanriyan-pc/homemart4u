@@ -44,7 +44,7 @@ function LoginForm() {
         window.location.href = target;
       } else if (res.user.role === "DELIVERY_AGENT") {
         window.location.href = "/delivery";
-      } else if (redirectUrl && redirectUrl !== "/") {
+      } else if (redirectUrl && redirectUrl !== "/" && !redirectUrl.startsWith("/admin") && !redirectUrl.startsWith("/delivery")) {
         router.push(redirectUrl);
       } else {
         router.push("/");

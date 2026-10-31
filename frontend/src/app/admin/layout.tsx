@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ? input.toString()
             : input.url;
 
-        if (urlStr.includes("/api/admin")) {
+        if (urlStr.includes("/api/")) {
           const token = localStorage.getItem("fc_token");
           const headers = new Headers(init?.headers);
           if (token && !headers.has("Authorization")) {
@@ -69,18 +69,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!loading) {
-      const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
-      if (!user && !token) {
+      if (!user) {
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.removeItem("fc_token");
+          } catch {}
+        }
         router.push("/login?redirect=/admin");
-      } else if (user && user.role !== "ADMIN") {
+      } else if (user.role !== "ADMIN") {
         router.push("/");
       }
     }
   }, [user, loading, router]);
 
-  const hasToken = typeof window !== "undefined" ? !!localStorage.getItem("fc_token") : false;
-
-  if (loading || (!user && hasToken)) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-charcoal-700 text-cream-100 text-xs font-mono">
         Verifying administrative authorization...
@@ -88,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!user || (user.role !== "ADMIN")) {
+  if (!user || user.role !== "ADMIN") {
     return null;
   }
 

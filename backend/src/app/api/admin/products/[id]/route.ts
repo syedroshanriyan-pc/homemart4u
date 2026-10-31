@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+    if (!session || (session.role !== "ADMIN" )) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
@@ -97,7 +97,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+    if (!session || (session.role !== "ADMIN" )) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 

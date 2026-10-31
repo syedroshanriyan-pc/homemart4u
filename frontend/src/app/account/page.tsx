@@ -90,7 +90,7 @@ export default function AccountPage() {
       </div>
 
       {/* Surface Shortcuts if staff role */}
-      {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+      {(user.role === "ADMIN") && (
         <div className="p-4 rounded-2xl bg-amberGold-50 border border-amberGold-300 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-amberGold-400 text-charcoal-700">

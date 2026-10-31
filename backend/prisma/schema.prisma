@@ -10,7 +10,7 @@ generator client {
 
 model User {
   id           String    @id @default(cuid())
-  role         String    @default("CUSTOMER") // CUSTOMER, ADMIN, SUPER_ADMIN, DELIVERY_AGENT, ORDER_MANAGER
+  role         String    @default("CUSTOMER") // CUSTOMER, ADMIN, DELIVERY_AGENT, ORDER_MANAGER
   name         String
   mobile       String    @unique
   email        String?   @unique

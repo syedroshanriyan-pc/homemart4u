@@ -17,7 +17,7 @@ export async function POST(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" )) {
       return NextResponse.json({ error: "Forbidden: Delivery agent only" }, { status: 403 });
     }
 

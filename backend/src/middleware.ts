@@ -127,14 +127,20 @@ export async function middleware(req: NextRequest) {
 
   // 1. API Route Protection: /api/admin/* (Return 404 to non-admins so internal routes cannot be probed)
   if (pathname.startsWith("/api/admin")) {
-    if (!session || (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+    if (!token) {
+      return NextResponse.json({ error: "Not Found" }, { status: 404 });
+    }
+    if (session && session.role !== "ADMIN" ) {
       return NextResponse.json({ error: "Not Found" }, { status: 404 });
     }
   }
 
   // 2. API Route Protection: /api/delivery/* (Return 404 to unauthorized users)
   if (pathname.startsWith("/api/delivery")) {
-    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+    if (!token) {
+      return NextResponse.json({ error: "Not Found" }, { status: 404 });
+    }
+    if (session && session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" ) {
       return NextResponse.json({ error: "Not Found" }, { status: 404 });
     }
   }
@@ -156,7 +162,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    if (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
+    if (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" ) {
       return NextResponse.redirect(new URL("/", req.url));
     }
   }

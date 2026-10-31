@@ -277,7 +277,7 @@ describe("Homemart4u — Secure Dynamic UPI QR Payment Integration Suite", () =>
       assert.ok(content.includes("Invalid UTR: Must be exactly 12 numeric digits"), "Must require authentic 12-digit UTR");
       assert.ok(content.includes("evidenceRef"), "Must require bank evidence reference");
       assert.ok(content.includes("reason"), "Must require audit reason");
-      assert.ok(content.includes("session.role !== \"ADMIN\" && session.role !== \"SUPER_ADMIN\""), "Must enforce admin role authorization");
+      assert.ok(content.includes("session.role !== \"ADMIN\""), "Must enforce admin role authorization");
     });
 
     it("Admin reconciliation desk renders tabs for both Bank Ledger and Unresolved Payment Sessions", () => {

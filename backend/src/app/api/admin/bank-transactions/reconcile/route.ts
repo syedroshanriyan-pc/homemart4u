@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+    if (!session || (session.role !== "ADMIN" )) {
       return NextResponse.json({ error: "Forbidden: Admin authorization required" }, { status: 403 });
     }
 

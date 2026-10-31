@@ -6,7 +6,7 @@ import { getSessionUser } from "@/lib/auth";
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
-    const isAdmin = session && (session.role === "ADMIN" || session.role === "SUPER_ADMIN");
+    const isAdmin = session && (session.role === "ADMIN" );
 
     const body = await req.json();
     const {

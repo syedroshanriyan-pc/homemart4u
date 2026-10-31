@@ -1,7 +1,6 @@
 export type UserRole =
   | "CUSTOMER"
   | "ADMIN"
-  | "SUPER_ADMIN"
   | "DELIVERY_AGENT"
   | "ORDER_MANAGER";
 

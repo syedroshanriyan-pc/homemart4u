@@ -9,9 +9,18 @@ import {
 } from "@/lib/delivery";
 import { validateMinimumMeatOrder } from "@/lib/minimum-order";
 import { evaluateCoupon } from "@/lib/coupons";
+import { checkRateLimit, getClientIp, rateLimitHeaders } from "@/lib/rate-limiter";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rateLimit = checkRateLimit(`cart-validate:${ip}`, { maxRequests: 40, windowMs: 60 * 1000 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many validation requests. Please slow down." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.resetSeconds), ...rateLimitHeaders(rateLimit) } }
+      );
+    }
     const [session, body] = await Promise.all([
       getSessionUser(req),
       req.json().catch(() => ({})),

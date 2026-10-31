@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth, UserAddress } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { LocationModal } from "@/components/ui/LocationModal";
+import { DynamicPaymentModal } from "@/components/payment/DynamicPaymentModal";
 import {
   MapPin,
   CreditCard,
@@ -35,6 +36,12 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [upiOrderData, setUpiOrderData] = useState<{
+    orderId: string;
+    orderNumber: string;
+    amountRupees: number;
+  } | null>(null);
   const idempotencyKeyRef = useRef<string>("");
 
   useEffect(() => {
@@ -108,6 +115,26 @@ export default function CheckoutPage() {
     (validation
       ? validation.totalMinor
       : (previewCalculation.totalMinor + previewCalculation.codFeeMinor)) / 100;
+
+  
+  const handleSwitchToCod = async (orderIdToSwitch: string) => {
+    try {
+      const switchRes = await fetch(`/api/orders/${orderIdToSwitch}/switch-cod`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const switchData = await switchRes.json().catch(() => ({}));
+      if (switchRes.ok && switchData.success) {
+        clearCart();
+        setUpiOrderData(null);
+        router.push(`/order-success?orderId=${orderIdToSwitch}&method=COD`);
+      } else {
+        setErrorMessage(switchData.error || "Failed to switch to COD.");
+      }
+    } catch {
+      setErrorMessage("Network issue switching to COD.");
+    }
+  };
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -395,6 +422,22 @@ export default function CheckoutPage() {
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
       />
+
+      {upiOrderData && (
+        <DynamicPaymentModal
+          isOpen={true}
+          orderId={upiOrderData.orderId}
+          orderNumber={upiOrderData.orderNumber}
+          amountRupees={upiOrderData.amountRupees}
+          onClose={() => setUpiOrderData(null)}
+          onSwitchToCod={handleSwitchToCod}
+          onSuccess={(finalOrderId) => {
+            clearCart();
+            setUpiOrderData(null);
+            router.push(`/order-success?orderId=${finalOrderId}&method=ONLINE`);
+          }}
+        />
+      )}
 
 
     </div>

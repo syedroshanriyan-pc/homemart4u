@@ -268,7 +268,7 @@ export const Navbar: React.FC = () => {
                         My Favorites
                       </Link>
 
-                      {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+                      {(user.role === "ADMIN") && (
                         <Link
                           href="/admin"
                           onClick={() => setIsUserMenuOpen(false)}
@@ -480,7 +480,7 @@ export const Navbar: React.FC = () => {
                       <p className="font-semibold text-charcoal-800 text-xs truncate">
                         {user.name}
                       </p>
-                      {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+                      {(user.role === "ADMIN") && (
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amberGold-100 text-amberGold-800 border border-amberGold-300">
                           ADMIN
                         </span>
@@ -493,7 +493,7 @@ export const Navbar: React.FC = () => {
                 </div>
 
                 <div className="space-y-0.5">
-                  {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+                  {(user.role === "ADMIN") && (
                     <Link
                       href="/admin"
                       onClick={() => setIsMobileMenuOpen(false)}

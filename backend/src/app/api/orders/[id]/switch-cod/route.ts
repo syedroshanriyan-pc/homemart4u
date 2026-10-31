@@ -27,7 +27,7 @@ export async function POST(
 
     // Role-based authorization: Owner or Admin
     const isOwner = session && order.userId === session.id;
-    const isAdmin = session && (session.role === "ADMIN" || session.role === "SUPER_ADMIN");
+    const isAdmin = session && (session.role === "ADMIN" );
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json(

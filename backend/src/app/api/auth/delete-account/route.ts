@@ -19,7 +19,7 @@ export async function DELETE(req: NextRequest) {
       where: { id: userId },
     });
 
-    if (user && (user.role === "ADMIN" || user.role === "SUPER_ADMIN")) {
+    if (user && (user.role === "ADMIN")) {
       return NextResponse.json(
         { error: "Forbidden: Administrator and store owner accounts cannot be self-deleted for security and compliance." },
         { status: 403 }

@@ -128,41 +128,35 @@ export async function middleware(req: NextRequest) {
 
     // 1. API Route Protection: /api/admin/* (Return 404 to non-admins so internal routes cannot be probed)
     if (pathname.startsWith("/api/admin")) {
-      if (!session || (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+      if (!token) {
+        return NextResponse.json({ error: "Not Found" }, { status: 404 });
+      }
+      if (session && session.role !== "ADMIN" ) {
         return NextResponse.json({ error: "Not Found" }, { status: 404 });
       }
     }
 
     // 2. API Route Protection: /api/delivery/* (Return 404 to unauthorized users)
     if (pathname.startsWith("/api/delivery")) {
-      if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+      if (!token) {
+        return NextResponse.json({ error: "Not Found" }, { status: 404 });
+      }
+      if (session && session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" ) {
         return NextResponse.json({ error: "Not Found" }, { status: 404 });
       }
     }
 
     // 3. UI Admin Portal Protection (/admin & /admin/*)
-    // Even if user knows the routes, if they are not verified admins they cannot access them
+    // Non-admins (e.g. CUSTOMER) are immediately bounced to storefront
     if (pathname.startsWith("/admin")) {
-      if (!token) {
-        const loginUrl = new URL("/login", req.url);
-        loginUrl.searchParams.set("redirect", pathname);
-        return NextResponse.redirect(loginUrl);
-      }
-
-      if (session && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
+      if (session && session.role !== "ADMIN" ) {
         return NextResponse.redirect(new URL("/", req.url));
       }
     }
 
     // 4. UI Delivery Partner Portal Protection (/delivery & /delivery/*)
     if (pathname.startsWith("/delivery")) {
-      if (!token) {
-        const loginUrl = new URL("/login", req.url);
-        loginUrl.searchParams.set("redirect", pathname);
-        return NextResponse.redirect(loginUrl);
-      }
-
-      if (session && session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
+      if (session && session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" ) {
         return NextResponse.redirect(new URL("/", req.url));
       }
     }

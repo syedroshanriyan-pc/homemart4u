@@ -34,25 +34,61 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, loading, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Automatically attach Bearer token and credentials to all admin fetch requests
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const originalFetch = window.fetch;
+      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const urlStr =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+        if (urlStr.includes("/api/admin")) {
+          const token = localStorage.getItem("fc_token");
+          const headers = new Headers(init?.headers);
+          if (token && !headers.has("Authorization")) {
+            headers.set("Authorization", `Bearer ${token}`);
+          }
+          return originalFetch(input, {
+            ...init,
+            credentials: init?.credentials || "include",
+            headers,
+          });
+        }
+        return originalFetch(input, init);
+      };
+
+      return () => {
+        window.fetch = originalFetch;
+      };
+    }
+  }, []);
+
   useEffect(() => {
     if (!loading) {
-      if (!user) {
+      const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
+      if (!user && !token) {
         router.push("/login?redirect=/admin");
-      } else if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+      } else if (user && user.role !== "ADMIN") {
         router.push("/");
       }
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  const hasToken = typeof window !== "undefined" ? !!localStorage.getItem("fc_token") : false;
+
+  if (loading || (!user && hasToken)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-charcoal-700 text-cream-100 text-xs font-mono">
-        Verifying authorization...
+        Verifying administrative authorization...
       </div>
     );
   }
 
-  if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
+  if (!user || (user.role !== "ADMIN")) {
     return null;
   }
 

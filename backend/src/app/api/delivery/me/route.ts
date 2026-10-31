@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" )) {
       return NextResponse.json({ error: "Unauthorized: Delivery agent access required" }, { status: 403 });
     }
 

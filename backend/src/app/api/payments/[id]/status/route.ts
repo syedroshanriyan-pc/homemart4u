@@ -64,7 +64,7 @@ export async function GET(
     const session = await getSessionUser(req);
     if (payment.order.userId) {
       const isOwner = session && session.id === payment.order.userId;
-      const isAdmin = session && (session.role === "ADMIN" || session.role === "SUPER_ADMIN" || session.role === "DELIVERY_AGENT");
+      const isAdmin = session && (session.role === "ADMIN"  || session.role === "DELIVERY_AGENT");
       if (!isOwner && !isAdmin) {
         return NextResponse.json({ error: "Unauthorized access to order payment details" }, { status: 403 });
       }
@@ -232,7 +232,7 @@ export async function POST(
       return NextResponse.json({ error: "Payment record not found" }, { status: 404 });
     }
 
-    const isAdmin = session && (session.role === "ADMIN" || session.role === "SUPER_ADMIN" || session.role === "DELIVERY_AGENT");
+    const isAdmin = session && (session.role === "ADMIN"  || session.role === "DELIVERY_AGENT");
     const isOwner = session && existingPayment.order.userId && session.id === existingPayment.order.userId;
 
     if (!isAdmin && !isOwner) {

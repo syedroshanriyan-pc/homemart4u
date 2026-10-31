@@ -9,7 +9,7 @@ export async function POST(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" && session.role !== "SUPER_ADMIN")) {
+    if (!session || (session.role !== "ADMIN" )) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 

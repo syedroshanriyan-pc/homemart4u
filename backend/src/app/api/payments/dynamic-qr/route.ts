@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Verify user ownership if order belongs to a registered user
-      if (order.userId && (!session || (order.userId !== session.id && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN"))) {
+      if (order.userId && (!session || (order.userId !== session.id && session.role !== "ADMIN" ))) {
         return NextResponse.json({ error: "Unauthorized access to order" }, { status: 403 });
       }
 

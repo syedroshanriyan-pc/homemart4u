@@ -38,15 +38,12 @@ function LoginForm() {
     setIsLoading(false);
 
     if (res.success && res.user) {
-      if (res.user.role === "ADMIN" || res.user.role === "SUPER_ADMIN") {
+      if (res.user.role === "ADMIN") {
         // Admins ALWAYS go to /admin unless a specific admin sub-page was requested
-        if (redirectUrl && redirectUrl.startsWith("/admin")) {
-          router.push(redirectUrl);
-        } else {
-          router.push("/admin");
-        }
+        const target = redirectUrl && redirectUrl.startsWith("/admin") ? redirectUrl : "/admin";
+        window.location.href = target;
       } else if (res.user.role === "DELIVERY_AGENT") {
-        router.push("/delivery");
+        window.location.href = "/delivery";
       } else if (redirectUrl && redirectUrl !== "/") {
         router.push(redirectUrl);
       } else {

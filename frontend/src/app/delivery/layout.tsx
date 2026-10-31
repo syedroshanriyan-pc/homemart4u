@@ -13,11 +13,45 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [toggling, setToggling] = useState(false);
 
+  // Automatically attach Bearer token and credentials to all delivery fetch requests
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const originalFetch = window.fetch;
+      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const urlStr =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+        if (urlStr.includes("/api/delivery")) {
+          const token = localStorage.getItem("fc_token");
+          const headers = new Headers(init?.headers);
+          if (token && !headers.has("Authorization")) {
+            headers.set("Authorization", `Bearer ${token}`);
+          }
+          return originalFetch(input, {
+            ...init,
+            credentials: init?.credentials || "include",
+            headers,
+          });
+        }
+        return originalFetch(input, init);
+      };
+
+      return () => {
+        window.fetch = originalFetch;
+      };
+    }
+  }, []);
+
   useEffect(() => {
     if (!loading) {
-      if (!user) {
+      const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
+      if (!user && !token) {
         router.push("/login?redirect=/delivery");
-      } else if (user.role !== "DELIVERY_AGENT" && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+      } else if (user && user.role !== "DELIVERY_AGENT" && user.role !== "ADMIN") {
         router.push("/");
       }
     }
@@ -41,22 +75,24 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
     }
   };
 
-  if (loading) {
+  const hasToken = typeof window !== "undefined" ? !!localStorage.getItem("fc_token") : false;
+
+  if (loading || (!user && hasToken)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-charcoal-800 text-cream-100 text-xs font-mono">
-        Authenticating...
+        Authenticating Delivery Fleet...
       </div>
     );
   }
 
-  if (!user || (user.role !== "DELIVERY_AGENT" && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
+  if (!user || (user.role !== "DELIVERY_AGENT" && user.role !== "ADMIN")) {
     return null;
   }
 
   return (
     <div className="min-h-screen bg-cream-100 flex flex-col">
       {/* Administrator Direct Shortcut Bar */}
-      {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+      {(user.role === "ADMIN") && (
         <div className="bg-amberGold-400 text-charcoal-900 px-4 py-2 text-xs font-bold flex items-center justify-between shadow-xs sticky top-0 z-50">
           <span className="flex items-center gap-1.5">
             <span>⚙️</span>

@@ -42,7 +42,7 @@ export async function GET(
 
     // Role-based authorization
     const isOwner = order.userId === session.id;
-    const isAdmin = session.role === "ADMIN" || session.role === "SUPER_ADMIN";
+    const isAdmin = session.role === "ADMIN" ;
     const isAssignedAgent = order.deliveryAssignment?.agentUserId === session.id;
 
     if (!isOwner && !isAdmin && !isAssignedAgent) {
@@ -92,7 +92,7 @@ export async function PATCH(
     }
 
     const isOwner = session && order.userId === session.id;
-    const isAdmin = session && (session.role === "ADMIN" || session.role === "SUPER_ADMIN");
+    const isAdmin = session && (session.role === "ADMIN" );
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: "Forbidden: You cannot modify this order" }, { status: 403 });

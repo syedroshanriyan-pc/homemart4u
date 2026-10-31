@@ -20,7 +20,7 @@ export interface UserProfile {
   name: string;
   mobile: string;
   email: string | null;
-  role: "CUSTOMER" | "ADMIN" | "SUPER_ADMIN" | "DELIVERY_AGENT" | "ORDER_MANAGER";
+  role: "CUSTOMER" | "ADMIN"  | "DELIVERY_AGENT" | "ORDER_MANAGER";
   addresses?: UserAddress[];
   deliveryProfile?: any;
 }
@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("fc_token");
-        if (stored && !document.cookie.includes("fc_token=")) {
+        if (stored) {
           const isHttps = window.location.protocol === "https:";
           document.cookie = `fc_token=${stored}; path=/; max-age=604800; SameSite=Lax; ${isHttps ? "Secure;" : ""}`;
         }

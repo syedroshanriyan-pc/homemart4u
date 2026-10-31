@@ -11,7 +11,9 @@
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "prisma:generate": "npx prisma generate",
     "prisma:push": "npx prisma db push",
-    "prisma:seed": "node prisma/seed.cjs"
+    "prisma:seed": "node prisma/seed.cjs",
+    "db:reset": "node scripts/controlled-reset.cjs",
+    "prisma:clean-reset": "node scripts/controlled-reset.cjs --confirm"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

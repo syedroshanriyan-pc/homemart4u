@@ -27,7 +27,7 @@ export async function GET(
     }
 
     const isOwner = order.userId === session.id;
-    const isAdmin = session.role === "ADMIN" || session.role === "SUPER_ADMIN";
+    const isAdmin = session.role === "ADMIN" ;
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -18,7 +18,7 @@ import {
   Calendar,
   CheckCircle2,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
@@ -101,10 +101,25 @@ function OrderSuccessContent() {
   }, [orderId]);
 
   const handleCopyOrderNumber = (num: string) => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(num);
+    if (!num) return;
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(num);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = num;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Ignore copy error
     }
   };
 
@@ -139,24 +154,27 @@ function OrderSuccessContent() {
         </div>
 
         <div className="pt-2 flex flex-col gap-2.5 max-w-xs mx-auto">
-          <Button
-            variant="primary"
-            size="md"
+          <button
+            type="button"
             onClick={() => window.location.reload()}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-sm transition active:scale-[0.98] cursor-pointer"
           >
             Try Again
-          </Button>
-          <Link href="/cart" className="w-full">
-            <Button variant="outline" size="md" className="w-full">
-              Back to Cart
-            </Button>
+          </button>
+          <Link
+            href="/cart"
+            onClick={() => router.push("/cart")}
+            className="w-full py-2.5 px-4 bg-white hover:bg-stone-50 text-stone-700 border-2 border-stone-300 rounded-xl font-bold text-sm shadow-xs transition active:scale-[0.98] cursor-pointer text-center"
+          >
+            Back to Cart
           </Link>
-          <Link href="/contact" className="w-full">
-            <Button variant="ghost" size="md" className="w-full text-stone-600 hover:text-stone-900">
-              <PhoneCall className="w-4 h-4 mr-2" />
-              Contact Support
-            </Button>
+          <Link
+            href="/contact"
+            onClick={() => router.push("/contact")}
+            className="w-full py-2 px-4 text-stone-600 hover:text-stone-900 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <PhoneCall className="w-4 h-4" />
+            <span>Contact Support</span>
           </Link>
         </div>
       </div>
@@ -165,8 +183,12 @@ function OrderSuccessContent() {
 
   let parsedAddress: any = null;
   try {
-    parsedAddress = order.deliveryAddressSnapshot ? JSON.parse(order.deliveryAddressSnapshot) : null;
-  } catch {}
+    parsedAddress = order.deliveryAddress || (order.deliveryAddressSnapshot ? JSON.parse(order.deliveryAddressSnapshot) : null);
+  } catch {
+    parsedAddress = order.deliveryAddress || null;
+  }
+
+  const targetOrderId = order?.id || orderId || order?.orderNumber;
 
   const totalRupees = (order.totalMinor / 100).toFixed(2);
   const subtotalRupees = (order.subtotalMinor / 100).toFixed(2);
@@ -522,21 +544,26 @@ function OrderSuccessContent() {
 
           {/* Stage 5: Primary Action Buttons */}
           <div className="p-5 sm:p-6 bg-stone-50 border-t border-stone-200 flex flex-col sm:flex-row gap-3 justify-end animate-stage-5">
-            <Link href="/" className="w-full sm:w-auto">
-              <Button variant="outline" size="md" className="w-full flex items-center justify-center gap-2 bg-white hover:bg-stone-100 text-stone-700 border-stone-300">
-                <ShoppingBag className="w-4 h-4" />
-                <span>Continue Shopping</span>
-              </Button>
+            <Link
+              href="/"
+              onClick={() => {
+                router.push("/");
+              }}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-white hover:bg-stone-100 text-stone-700 border-2 border-stone-300 shadow-xs transition active:scale-[0.98] cursor-pointer text-center"
+            >
+              <ShoppingBag className="w-4 h-4 text-stone-600" />
+              <span>Continue Shopping</span>
             </Link>
-            <Link href={`/account/orders/${order.id}`} className="w-full sm:w-auto">
-              <Button
-                variant="primary"
-                size="md"
-                className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20"
-              >
-                <Truck className="w-4 h-4" />
-                <span>Track My Order &bull; Track Status</span>
-              </Button>
+
+            <Link
+              href={targetOrderId ? `/account/orders/${targetOrderId}` : "/account/orders"}
+              onClick={() => {
+                router.push(targetOrderId ? `/account/orders/${targetOrderId}` : "/account/orders");
+              }}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition active:scale-[0.98] cursor-pointer text-center"
+            >
+              <Truck className="w-4 h-4 text-white" />
+              <span>Track My Order &bull; Track Status</span>
             </Link>
           </div>
         </div>

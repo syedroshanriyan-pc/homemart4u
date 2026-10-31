@@ -139,6 +139,7 @@ export default function CheckoutPage() {
         }
         clearCart();
         setUpiOrderData(null);
+        router.push(`/order-success?orderId=${orderIdToSwitch}&method=COD`);
         window.location.href = `/order-success?orderId=${orderIdToSwitch}&method=COD`;
       } else {
         setErrorMessage(switchData.error || "Failed to switch to COD.");
@@ -213,6 +214,7 @@ export default function CheckoutPage() {
         } catch {}
       }
       clearCart();
+      router.push(`/order-success?orderId=${data.order.id}&method=COD`);
       window.location.href = `/order-success?orderId=${data.order.id}&method=COD`;
     } catch {
       setErrorMessage("Network error placing order. Please try again.");

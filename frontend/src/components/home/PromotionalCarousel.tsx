@@ -67,7 +67,7 @@ export const PromotionalCarousel: React.FC = () => {
     setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
   }, [cards.length]);
 
-  // 4. Automatic 1-second rotation when multiple cards exist & not paused/reduced-motion
+  // 4. Automatic 3-second rotation when multiple cards exist & not paused/reduced-motion
   useEffect(() => {
     if (cards.length <= 1 || isPaused || reducedMotion) {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -76,7 +76,7 @@ export const PromotionalCarousel: React.FC = () => {
 
     timerRef.current = setInterval(() => {
       handleNext();
-    }, 1000);
+    }, 3000);
 
     return () => {
       if (timerRef.current) {

@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
         category: true,
         variants: { orderBy: { priceMinor: "asc" } },
         customizationGroups: {
-          include: { options: true },
+          orderBy: { displayOrder: "asc" },
+          include: {
+            options: { orderBy: { displayOrder: "asc" } },
+          },
         },
       },
     });
@@ -109,6 +112,33 @@ export async function POST(req: NextRequest) {
       };
     }
 
+    // Build customization groups to create
+    let customizationGroupsCreateData: any = undefined;
+    if (Array.isArray(body.customizationGroups) && body.customizationGroups.length > 0) {
+      customizationGroupsCreateData = {
+        create: body.customizationGroups
+          .filter((g: any) => g && g.name && String(g.name).trim())
+          .map((g: any, gIdx: number) => ({
+            name: String(g.name).trim(),
+            selectionType: g.selectionType === "MULTIPLE" ? "MULTIPLE" : "SINGLE",
+            isRequired: Boolean(g.isRequired),
+            displayOrder: g.displayOrder ?? gIdx,
+            options: {
+              create: (Array.isArray(g.options) ? g.options : [])
+                .filter((o: any) => o && o.name && String(o.name).trim())
+                .map((o: any, oIdx: number) => ({
+                  name: String(o.name).trim(),
+                  priceDeltaMinor: o.priceDeltaMinor !== undefined
+                    ? parseInt(String(o.priceDeltaMinor), 10)
+                    : (o.priceDeltaRs !== undefined ? Math.round(parseFloat(String(o.priceDeltaRs || 0)) * 100) : 0),
+                  isActive: o.isActive !== undefined ? Boolean(o.isActive) : true,
+                  displayOrder: o.displayOrder ?? oIdx,
+                })),
+            },
+          })),
+      };
+    }
+
     const product = await prisma.product.create({
       data: {
         name: name.trim(),
@@ -124,10 +154,17 @@ export async function POST(req: NextRequest) {
         savePriceText: savePriceText?.trim() || null,
         badgeText: badgeText?.trim() || null,
         variants: variantCreateData,
+        customizationGroups: customizationGroupsCreateData,
       },
       include: {
         category: true,
-        variants: true,
+        variants: { orderBy: { priceMinor: "asc" } },
+        customizationGroups: {
+          orderBy: { displayOrder: "asc" },
+          include: {
+            options: { orderBy: { displayOrder: "asc" } },
+          },
+        },
       },
     });
 

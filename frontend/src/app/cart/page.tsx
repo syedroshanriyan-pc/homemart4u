@@ -163,9 +163,15 @@ export default function CartPage() {
                       {item.customizations.map((c, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-0.5 rounded-md bg-cream-100 text-[10px] text-charcoal-600 border border-cream-200"
+                          className="px-2 py-0.5 rounded-md bg-cream-100 text-[10px] text-charcoal-700 border border-cream-200 font-medium"
                         >
-                          {c.option}
+                          {c.group ? <span className="opacity-70">{c.group}: </span> : null}
+                          <span>{c.option}</span>
+                          {c.priceDeltaMinor && c.priceDeltaMinor > 0 ? (
+                            <span className="text-emerald-700 font-semibold ml-1">
+                              (+₹{(c.priceDeltaMinor / 100).toFixed(0)})
+                            </span>
+                          ) : null}
                         </span>
                       ))}
                     </div>

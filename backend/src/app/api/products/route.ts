@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ products }, {
       headers: {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Cache-Control": "public, max-age=0, s-maxage=1, stale-while-revalidate=5, must-revalidate",
         ...rateLimitHeaders(rateLimit)
       }
     });

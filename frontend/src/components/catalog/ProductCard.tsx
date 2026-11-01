@@ -78,16 +78,33 @@ export const ProductCard: React.FC<{
     });
   }, [product.variants]);
 
-  // Selected customizations: map of groupId -> optionId
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
+  // Selected customizations: map of groupId -> array of optionIds
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>(() => {
+    const initial: Record<string, string[]> = {};
     product.customizationGroups?.forEach((g) => {
-      if (g.options.length > 0) {
-        initial[g.id] = g.options[0].id;
+      if (g.isRequired && g.selectionType === "SINGLE" && g.options.length > 0) {
+        initial[g.id] = [g.options[0].id];
+      } else {
+        initial[g.id] = [];
       }
     });
     return initial;
   });
+
+  const toggleModalOption = (groupId: string, optionId: string, selectionType: string) => {
+    setSelectedOptions((prev) => {
+      const current = prev[groupId] || [];
+      if (selectionType === "SINGLE") {
+        return { ...prev, [groupId]: [optionId] };
+      } else {
+        const exists = current.includes(optionId);
+        return {
+          ...prev,
+          [groupId]: exists ? current.filter((id) => id !== optionId) : [...current, optionId],
+        };
+      }
+    });
+  };
 
   const [addedAnimation, setAddedAnimation] = useState(false);
 
@@ -137,21 +154,32 @@ export const ProductCard: React.FC<{
   const handleConfirmCustomize = () => {
     if (!selectedVariant) return;
 
+    // Validate required customization groups
+    const missingGroup = (product.customizationGroups || []).find(
+      (g) => g.isRequired && (!selectedOptions[g.id] || selectedOptions[g.id].length === 0)
+    );
+    if (missingGroup) {
+      alert(`Please select your preference for "${missingGroup.name}".`);
+      return;
+    }
+
     const chosenCustomizations: { group: string; option: string; optionId: string; priceDeltaMinor: number }[] = [];
     let deltaSum = 0;
 
     product.customizationGroups?.forEach((g) => {
-      const optId = selectedOptions[g.id];
-      const opt = g.options.find((o) => o.id === optId);
-      if (opt) {
-        chosenCustomizations.push({
-          group: g.name,
-          option: opt.name,
-          optionId: opt.id,
-          priceDeltaMinor: opt.priceDeltaMinor,
-        });
-        deltaSum += opt.priceDeltaMinor;
-      }
+      const optIds = selectedOptions[g.id] || [];
+      optIds.forEach((optId) => {
+        const opt = g.options.find((o) => o.id === optId);
+        if (opt) {
+          chosenCustomizations.push({
+            group: g.name,
+            option: opt.name,
+            optionId: opt.id,
+            priceDeltaMinor: opt.priceDeltaMinor,
+          });
+          deltaSum += opt.priceDeltaMinor;
+        }
+      });
     });
 
     addItem({
@@ -432,58 +460,63 @@ export const ProductCard: React.FC<{
           )}
 
           {/* Customization Groups */}
-          {product.customizationGroups?.map((group) => (
-            <div key={group.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold uppercase tracking-wider text-charcoal-500">
-                  {group.name}
-                </label>
-                {group.isRequired && (
-                  <span className="text-[10px] text-amberGold-600 font-medium">Required</span>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                {group.options.map((opt) => {
-                  const isSelected = selectedOptions[group.id] === opt.id;
-                  return (
-                    <button
-                      type="button"
-                      key={opt.id}
-                      onClick={() =>
-                        setSelectedOptions((prev) => ({
-                          ...prev,
-                          [group.id]: opt.id,
-                        }))
-                      }
-                      className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left text-xs transition-all ${
-                        isSelected
-                          ? "border-amberGold-400 bg-amberGold-50/50 text-charcoal-700 font-medium ring-1 ring-amberGold-400/40"
-                          : "border-cream-200 hover:border-cream-300 bg-cream-50 text-charcoal-600"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-                        <div
-                          className={`w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center ${
-                            isSelected
-                              ? "border-amberGold-500 bg-amberGold-500 text-cream-50"
-                              : "border-cream-300"
-                          }`}
-                        >
-                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-cream-50" />}
+          {product.customizationGroups?.map((group) => {
+            const isSingle = group.selectionType === "SINGLE";
+            const groupSelected = selectedOptions[group.id] || [];
+
+            return (
+              <div key={group.id} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-charcoal-700">
+                      {group.name}
+                    </label>
+                    <span className="text-[10px] text-charcoal-400 ml-1.5">
+                      {isSingle ? "(Select one)" : "(Multiple allowed)"}
+                    </span>
+                  </div>
+                  {group.isRequired && (
+                    <span className="text-[10px] text-amberGold-600 font-bold uppercase tracking-wider">Required</span>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  {group.options.map((opt) => {
+                    const isSelected = groupSelected.includes(opt.id);
+                    return (
+                      <button
+                        type="button"
+                        key={opt.id}
+                        onClick={() => toggleModalOption(group.id, opt.id, group.selectionType)}
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left text-xs transition-all ${
+                          isSelected
+                            ? "border-stone-900 bg-stone-900 text-white font-medium ring-1 ring-stone-900"
+                            : "border-cream-200 hover:border-cream-300 bg-cream-50 text-charcoal-600"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                          <div
+                            className={`w-4 h-4 rounded-${isSingle ? "full" : "md"} border flex-shrink-0 flex items-center justify-center ${
+                              isSelected
+                                ? "border-emerald-400 bg-emerald-500 text-cream-50"
+                                : "border-cream-300"
+                            }`}
+                          >
+                            {isSelected && (isSingle ? <div className="w-1.5 h-1.5 rounded-full bg-cream-50" /> : <Check className="w-2.5 h-2.5 stroke-[3]" />)}
+                          </div>
+                          <span className="leading-snug break-words">{opt.name}</span>
                         </div>
-                        <span className="leading-snug break-words">{opt.name}</span>
-                      </div>
-                      {opt.priceDeltaMinor > 0 && (
-                        <span className="text-amberGold-600 font-semibold flex-shrink-0">
-                          +₹{(opt.priceDeltaMinor / 100).toFixed(0)}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                        {opt.priceDeltaMinor > 0 && (
+                          <span className={`font-semibold flex-shrink-0 ${isSelected ? "text-amber-300" : "text-amberGold-600"}`}>
+                            +₹{(opt.priceDeltaMinor / 100).toFixed(0)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Add to Cart Confirm Action */}
           <div className="pt-3 border-t border-cream-200">

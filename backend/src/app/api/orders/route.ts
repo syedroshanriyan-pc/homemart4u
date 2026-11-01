@@ -245,12 +245,20 @@ export async function POST(req: NextRequest) {
       prisma.productVariant.findMany({
         where: { id: { in: variantIds } },
         include: {
-          product: { include: { category: true } },
+          product: {
+            include: {
+              category: true,
+              customizationGroups: {
+                include: { options: true },
+              },
+            },
+          },
         },
       }),
       optionIds.length > 0
         ? prisma.customizationOption.findMany({
             where: { id: { in: optionIds }, isActive: true },
+            include: { group: true },
           })
         : Promise.resolve([]),
       prisma.systemSetting.findMany({
@@ -311,19 +319,63 @@ export async function POST(req: NextRequest) {
 
       let customizationTotalDelta = 0;
       const verifiedCustomizations: any[] = [];
+      const selectedOptionIdsInItem = new Set<string>();
+      const optionsByGroupId = new Map<string, string[]>();
+
       if (item.customizations && Array.isArray(item.customizations)) {
         for (const c of item.customizations) {
-          if (c.optionId) {
-            const opt = optionMap.get(c.optionId);
-            if (opt) {
-              customizationTotalDelta += opt.priceDeltaMinor;
-              verifiedCustomizations.push({
-                group: c.group || "Customization",
-                option: opt.name,
-                priceDeltaMinor: opt.priceDeltaMinor,
-              });
-            }
+          if (!c.optionId) continue;
+          const opt = optionMap.get(c.optionId);
+          if (!opt) {
+            return NextResponse.json(
+              { error: `Customization option "${c.option || c.optionId}" is invalid or no longer available.` },
+              { status: 400 }
+            );
           }
+
+          // Authoritatively verify relationship: Option -> Group -> Product
+          if (opt.group.productId !== variant.productId) {
+            return NextResponse.json(
+              { error: `Customization option "${opt.name}" does not belong to product "${variant.product.name}".` },
+              { status: 400 }
+            );
+          }
+
+          // Prevent duplicate option charge application
+          if (selectedOptionIdsInItem.has(opt.id)) {
+            continue;
+          }
+          selectedOptionIdsInItem.add(opt.id);
+
+          const groupOpts = optionsByGroupId.get(opt.groupId) || [];
+          groupOpts.push(opt.id);
+          optionsByGroupId.set(opt.groupId, groupOpts);
+
+          customizationTotalDelta += opt.priceDeltaMinor;
+          verifiedCustomizations.push({
+            group: opt.group.name,
+            option: opt.name,
+            optionId: opt.id,
+            priceDeltaMinor: opt.priceDeltaMinor,
+          });
+        }
+      }
+
+      // Authoritatively enforce Group rules: SINGLE selection & REQUIRED selection
+      const productGroups = variant.product.customizationGroups || [];
+      for (const group of productGroups) {
+        const selectedForGroup = optionsByGroupId.get(group.id) || [];
+        if (group.selectionType === "SINGLE" && selectedForGroup.length > 1) {
+          return NextResponse.json(
+            { error: `Group "${group.name}" only allows a single selection.` },
+            { status: 400 }
+          );
+        }
+        if (group.isRequired && selectedForGroup.length === 0) {
+          return NextResponse.json(
+            { error: `Please make a selection for required preference: "${group.name}".` },
+            { status: 400 }
+          );
         }
       }
 

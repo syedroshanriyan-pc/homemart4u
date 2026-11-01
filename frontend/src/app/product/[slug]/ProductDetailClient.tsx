@@ -19,6 +19,7 @@ import {
   Clock,
   ArrowLeft,
   ChevronRight,
+  AlertCircle,
 } from "lucide-react";
 import { ProductData, ProductVariantData } from "@/components/catalog/ProductCard";
 
@@ -73,35 +74,77 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
   const savingsRs = mrpNum > sellingNum ? mrpNum - sellingNum : 0;
   const saveTag = product.savePriceText || (savingsRs > 0 ? `Save ₹${savingsRs}` : null);
 
-  // Customizations selection state
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
+  // Customizations selection state: map of groupId -> array of optionIds
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>(() => {
+    const initial: Record<string, string[]> = {};
     product.customizationGroups?.forEach((g) => {
-      if (g.options.length > 0) {
-        initial[g.id] = g.options[0].id;
+      // If group is required and single, preselect first active option
+      if (g.isRequired && g.selectionType === "SINGLE" && g.options.length > 0) {
+        initial[g.id] = [g.options[0].id];
+      } else {
+        initial[g.id] = [];
       }
     });
     return initial;
   });
 
+  const [validationWarning, setValidationWarning] = useState<string | null>(null);
+
+  const toggleOption = (groupId: string, optionId: string, selectionType: string) => {
+    setValidationWarning(null);
+    setSelectedOptions((prev) => {
+      const current = prev[groupId] || [];
+      if (selectionType === "SINGLE") {
+        return {
+          ...prev,
+          [groupId]: [optionId],
+        };
+      } else {
+        // MULTIPLE selection toggle
+        const exists = current.includes(optionId);
+        const updated = exists
+          ? current.filter((id) => id !== optionId)
+          : [...current, optionId];
+        return {
+          ...prev,
+          [groupId]: updated,
+        };
+      }
+    });
+  };
+
   const handleAddToCart = () => {
     if (!selectedVariant || !currentProduct.isAvailable) return;
+
+    // Validate required customization groups
+    const missingGroup = (currentProduct.customizationGroups || []).find(
+      (g) => g.isRequired && (!selectedOptions[g.id] || selectedOptions[g.id].length === 0)
+    );
+
+    if (missingGroup) {
+      setValidationWarning(`Please select your preference for "${missingGroup.name}".`);
+      return;
+    }
+
+    setValidationWarning(null);
 
     const chosenCustomizations: { group: string; option: string; optionId: string; priceDeltaMinor: number }[] = [];
     let deltaSum = 0;
 
-    product.customizationGroups?.forEach((g) => {
-      const optId = selectedOptions[g.id];
-      const opt = g.options.find((o) => o.id === optId);
-      if (opt) {
-        chosenCustomizations.push({
-          group: g.name,
-          option: opt.name,
-          optionId: opt.id,
-          priceDeltaMinor: opt.priceDeltaMinor,
-        });
-        deltaSum += opt.priceDeltaMinor;
-      }
+    currentProduct.customizationGroups?.forEach((g) => {
+      const optIds = selectedOptions[g.id] || [];
+      optIds.forEach((optId) => {
+        const opt = g.options.find((o) => o.id === optId);
+        if (opt) {
+          chosenCustomizations.push({
+            group: g.name,
+            option: opt.name,
+            optionId: opt.id,
+            priceDeltaMinor: opt.priceDeltaMinor,
+          });
+          deltaSum += opt.priceDeltaMinor;
+        }
+      });
     });
 
     addItem({
@@ -129,15 +172,18 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
 
   // Calculate total price with customization deltas
   let totalDeltaMinor = 0;
-  product.customizationGroups?.forEach((g) => {
-    const optId = selectedOptions[g.id];
-    const opt = g.options.find((o) => o.id === optId);
-    if (opt) totalDeltaMinor += opt.priceDeltaMinor;
+  currentProduct.customizationGroups?.forEach((g) => {
+    const optIds = selectedOptions[g.id] || [];
+    optIds.forEach((optId) => {
+      const opt = g.options.find((o) => o.id === optId);
+      if (opt) totalDeltaMinor += opt.priceDeltaMinor;
+    });
   });
 
   const unitTotalRs = selectedVariant
     ? (selectedVariant.priceMinor + totalDeltaMinor) / 100
     : 0;
+  const lineTotalRs = unitTotalRs * quantity;
 
   const isComingSoon = Boolean(
     product.badgeText?.toLowerCase().includes("coming soon") ||
@@ -293,30 +339,41 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
             </div>
           )}
 
-          {/* Variant / Portion Selector */}
+          {/* Section: Choose your quantity */}
           {currentProduct.variants && currentProduct.variants.length > 0 && (
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-charcoal-700">
-                  Select Pack / Portion
-                </label>
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-charcoal-900">
+                    Choose your quantity
+                  </h3>
+                  <p className="text-[11px] text-charcoal-500">
+                    Select your preferred pack size or portion
+                  </p>
+                </div>
                 {selectedVariant && (
-                  <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
                     Selected: {selectedVariant.name}
                   </span>
                 )}
               </div>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {currentProduct.variants.map((v) => {
                   const isSelected = selectedVariant?.id === v.id;
                   const vPrice = Math.round(v.priceMinor / 100);
                   const vMrp = v.mrpMinor ? Math.round(v.mrpMinor / 100) : null;
+                  const savings = vMrp && vMrp > vPrice ? vMrp - vPrice : 0;
+
                   return (
                     <button
                       key={v.id}
                       type="button"
-                      onClick={() => setSelectedVariant(v)}
-                      className={`relative p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                      onClick={() => {
+                        setSelectedVariant(v);
+                        setValidationWarning(null);
+                      }}
+                      className={`relative p-3 rounded-2xl border text-left transition-all cursor-pointer active:scale-95 ${
                         isSelected
                           ? "border-stone-900 bg-stone-900 text-white shadow-md ring-2 ring-stone-900/20"
                           : "border-cream-300 bg-white hover:border-charcoal-400 hover:bg-cream-50 text-charcoal-700 shadow-xs"
@@ -330,8 +387,9 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
                           </span>
                         )}
                       </div>
+
                       <div className="flex items-baseline gap-1.5 mt-1.5">
-                        <span className={`text-sm font-bold ${isSelected ? "text-amber-300" : "text-charcoal-900"}`}>
+                        <span className={`text-base font-bold font-serif ${isSelected ? "text-amber-300" : "text-charcoal-900"}`}>
                           ₹{vPrice}
                         </span>
                         {vMrp && vMrp > vPrice && (
@@ -340,11 +398,17 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
                           </span>
                         )}
                       </div>
-                      {v.quantityUnit && (
-                        <p className={`text-[10px] mt-0.5 ${isSelected ? "text-stone-300" : "text-charcoal-500"}`}>
-                          {v.quantityValue}{v.quantityUnit} net wt
-                        </p>
-                      )}
+
+                      <div className="flex items-center justify-between text-[10px] mt-1 pt-1 border-t border-cream-200/40">
+                        <span className={isSelected ? "text-stone-300" : "text-charcoal-500"}>
+                          {v.quantityValue}{v.quantityUnit} net
+                        </span>
+                        {savings > 0 && (
+                          <span className={`font-semibold ${isSelected ? "text-emerald-300" : "text-emerald-700"}`}>
+                            Save ₹{savings}
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -352,59 +416,119 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
             </div>
           )}
 
-          {/* Chicken Customizations (Cutting Style & Cleaning) */}
-          {product.customizationGroups?.map((group) => (
-            <div key={group.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold uppercase tracking-wider text-charcoal-500">
-                  {group.name}
-                </label>
-                {group.isRequired && (
-                  <span className="text-[10px] text-amberGold-600 font-medium">Required</span>
-                )}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {group.options.map((opt) => {
-                  const isSelected = selectedOptions[group.id] === opt.id;
-                  return (
-                    <button
-                      type="button"
-                      key={opt.id}
-                      onClick={() =>
-                        setSelectedOptions((prev) => ({
-                          ...prev,
-                          [group.id]: opt.id,
-                        }))
-                      }
-                      className={`p-2.5 rounded-xl border text-left text-xs transition-all flex items-center justify-between ${
-                        isSelected
-                          ? "border-amberGold-400 bg-amberGold-50/50 text-charcoal-700 font-medium ring-1 ring-amberGold-400/40"
-                          : "border-cream-200 hover:border-cream-300 bg-cream-50 text-charcoal-600"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-                        <div
-                          className={`w-3.5 h-3.5 rounded-full border flex-shrink-0 flex items-center justify-center ${
-                            isSelected
-                              ? "border-amberGold-500 bg-amberGold-500"
-                              : "border-cream-300"
-                          }`}
-                        >
-                          {isSelected && <div className="w-1 h-1 rounded-full bg-cream-50" />}
-                        </div>
-                        <span className="leading-snug break-words">{opt.name}</span>
-                      </div>
-                      {opt.priceDeltaMinor > 0 && (
-                        <span className="text-amberGold-600 font-semibold text-[11px] flex-shrink-0">
-                          +₹{(opt.priceDeltaMinor / 100).toFixed(0)}
+          {/* Configured Product Customizations */}
+          {currentProduct.customizationGroups && currentProduct.customizationGroups.length > 0 && (
+            <div className="space-y-4 pt-2">
+              {currentProduct.customizationGroups.map((group) => {
+                const groupSelected = selectedOptions[group.id] || [];
+                const isSingle = group.selectionType === "SINGLE";
+
+                return (
+                  <div key={group.id} className="space-y-2 p-3.5 rounded-2xl bg-cream-50/80 border border-cream-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-charcoal-800">
+                          {group.name}
                         </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                        <span className="text-[10px] text-charcoal-400 ml-2">
+                          {isSingle ? "(Select one)" : "(Multiple allowed)"}
+                        </span>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        group.isRequired
+                          ? groupSelected.length > 0
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : "bg-amber-100 text-amber-800 border border-amber-300"
+                          : "bg-cream-200 text-charcoal-500"
+                      }`}>
+                        {group.isRequired ? (groupSelected.length > 0 ? "Selected" : "Required") : "Optional"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {group.options.map((opt) => {
+                        const isOptionSelected = groupSelected.includes(opt.id);
+                        return (
+                          <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => toggleOption(group.id, opt.id, group.selectionType)}
+                            className={`p-2.5 rounded-xl border text-left text-xs transition-all flex items-center justify-between cursor-pointer active:scale-98 ${
+                              isOptionSelected
+                                ? "border-stone-900 bg-stone-900 text-white shadow-xs ring-1 ring-stone-900"
+                                : "border-cream-300 hover:border-charcoal-400 bg-white text-charcoal-700"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                              {isSingle ? (
+                                <div
+                                  className={`w-3.5 h-3.5 rounded-full border flex-shrink-0 flex items-center justify-center ${
+                                    isOptionSelected
+                                      ? "border-emerald-400 bg-emerald-500"
+                                      : "border-cream-300"
+                                  }`}
+                                >
+                                  {isOptionSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                </div>
+                              ) : (
+                                <div
+                                  className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${
+                                    isOptionSelected
+                                      ? "border-emerald-400 bg-emerald-500 text-white"
+                                      : "border-cream-300"
+                                  }`}
+                                >
+                                  {isOptionSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                                </div>
+                              )}
+                              <span className="leading-snug break-words font-medium">{opt.name}</span>
+                            </div>
+                            {opt.priceDeltaMinor > 0 && (
+                              <span className={`font-bold text-[11px] flex-shrink-0 ${isOptionSelected ? "text-amber-300" : "text-emerald-700"}`}>
+                                +₹{(opt.priceDeltaMinor / 100).toFixed(0)}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          )}
+
+          {/* Live Price Breakdown Card */}
+          <div className="p-3.5 rounded-2xl bg-cream-100/70 border border-cream-200 space-y-1.5 text-xs">
+            <div className="flex justify-between text-charcoal-600">
+              <span>Selected Variant ({selectedVariant?.name || "Standard"})</span>
+              <span className="font-mono font-semibold">
+                ₹{selectedVariant ? (selectedVariant.priceMinor / 100).toFixed(2) : "0.00"}
+              </span>
+            </div>
+            {totalDeltaMinor > 0 && (
+              <div className="flex justify-between text-emerald-800">
+                <span>Customization Charges</span>
+                <span className="font-mono font-semibold">+₹{(totalDeltaMinor / 100).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-charcoal-700 font-medium pt-1 border-t border-cream-200">
+              <span>Unit Price</span>
+              <span className="font-mono">₹{unitTotalRs.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-charcoal-900 font-bold pt-1 border-t border-cream-300 text-sm">
+              <span>Line Total ({quantity} {quantity === 1 ? "unit" : "units"})</span>
+              <span className="font-mono text-base font-serif">₹{lineTotalRs.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Validation Warning Notice */}
+          {validationWarning && (
+            <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span>{validationWarning}</span>
+            </div>
+          )}
 
           {/* Quantity and Add to Cart Row */}
           <div className="pt-4 border-t border-cream-200 space-y-4">

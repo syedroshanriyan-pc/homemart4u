@@ -76,13 +76,19 @@ export async function POST(req: NextRequest) {
         where: { id: { in: variantIds } },
         include: {
           product: {
-            include: { category: true },
+            include: {
+              category: true,
+              customizationGroups: {
+                include: { options: true },
+              },
+            },
           },
         },
       }),
       optionIds.length > 0
         ? prisma.customizationOption.findMany({
             where: { id: { in: optionIds }, isActive: true },
+            include: { group: true },
           })
         : Promise.resolve([]),
       prisma.systemSetting.findMany({
@@ -134,19 +140,51 @@ export async function POST(req: NextRequest) {
 
       let customizationTotalDelta = 0;
       const verifiedCustomizations: any[] = [];
+      const selectedOptionIdsInItem = new Set<string>();
+      const optionsByGroupId = new Map<string, string[]>();
+
       if (Array.isArray(item.customizations)) {
         for (const c of item.customizations) {
-          if (c.optionId) {
-            const opt = optionMap.get(c.optionId);
-            if (opt) {
-              customizationTotalDelta += opt.priceDeltaMinor;
-              verifiedCustomizations.push({
-                optionId: opt.id,
-                name: opt.name,
-                priceDeltaMinor: opt.priceDeltaMinor,
-              });
-            }
+          if (!c.optionId) continue;
+          const opt = optionMap.get(c.optionId);
+          if (!opt) {
+            errors.push(`Customization option for "${variant.product.name}" is no longer active.`);
+            continue;
           }
+
+          if (opt.group.productId !== variant.productId) {
+            errors.push(`Customization "${opt.name}" is not valid for "${variant.product.name}".`);
+            continue;
+          }
+
+          if (selectedOptionIdsInItem.has(opt.id)) {
+            continue;
+          }
+          selectedOptionIdsInItem.add(opt.id);
+
+          const groupOpts = optionsByGroupId.get(opt.groupId) || [];
+          groupOpts.push(opt.id);
+          optionsByGroupId.set(opt.groupId, groupOpts);
+
+          customizationTotalDelta += opt.priceDeltaMinor;
+          verifiedCustomizations.push({
+            optionId: opt.id,
+            name: opt.name,
+            group: opt.group.name,
+            priceDeltaMinor: opt.priceDeltaMinor,
+          });
+        }
+      }
+
+      // Check group rules
+      const productGroups = variant.product.customizationGroups || [];
+      for (const group of productGroups) {
+        const selectedForGroup = optionsByGroupId.get(group.id) || [];
+        if (group.selectionType === "SINGLE" && selectedForGroup.length > 1) {
+          errors.push(`Preference "${group.name}" for "${variant.product.name}" only allows one selection.`);
+        }
+        if (group.isRequired && selectedForGroup.length === 0) {
+          errors.push(`Please select a preference for "${group.name}" on "${variant.product.name}".`);
         }
       }
 

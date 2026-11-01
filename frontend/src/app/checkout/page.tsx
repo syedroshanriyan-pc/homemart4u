@@ -316,6 +316,19 @@ export default function CheckoutPage() {
                     <span className="text-stone-500 block text-[11px]">
                       {i.quantity} &times; {i.variantName}
                     </span>
+                    {i.customizations && i.customizations.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {i.customizations.map((c, idx) => (
+                          <span
+                            key={idx}
+                            className="px-1.5 py-0.5 rounded bg-stone-100 text-[9px] text-stone-700 border border-stone-200"
+                          >
+                            {c.group ? `${c.group}: ` : ""}{c.option}
+                            {c.priceDeltaMinor && c.priceDeltaMinor > 0 ? ` (+₹${(c.priceDeltaMinor / 100).toFixed(0)})` : ""}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <span className="font-mono font-bold text-stone-900">
                     ₹{((i.unitPriceMinor * i.quantity) / 100).toFixed(2)}

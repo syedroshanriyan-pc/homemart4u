@@ -100,12 +100,40 @@ function OrderSuccessContent() {
     fetchOrder();
   }, [orderId]);
 
-  const handleCopyOrderNumber = (num: string) => {
+    const handleCopyOrderNumber = (num: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(num);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const targetOrderId = order?.id || order?.orderNumber || orderId;
+  const trackOrderUrl = targetOrderId ? `/account/orders/${targetOrderId}` : "/account/orders";
+
+  const handleContinueShopping = (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      router.push("/menu");
+    } catch {}
+    setTimeout(() => {
+      window.location.href = "/menu";
+    }, 60);
+  };
+
+  const handleTrackMyOrder = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof window !== "undefined" && order) {
+      try {
+        sessionStorage.setItem("fc_latest_order", JSON.stringify(order));
+      } catch {}
+    }
+    try {
+      router.push(trackOrderUrl);
+    } catch {}
+    setTimeout(() => {
+      window.location.href = trackOrderUrl;
+    }, 60);
   };
 
   if (loading) {
@@ -187,7 +215,7 @@ function OrderSuccessContent() {
     : "Just now";
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8 animate-fade-in">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 pb-24 sm:pb-32 space-y-8 animate-fade-in">
       {/* 1. Google Pay / Meesho Inspired Celebratory Animated Checkmark */}
       <div className="text-center space-y-4">
         <div className="relative mx-auto w-28 h-28 flex items-center justify-center">
@@ -459,24 +487,19 @@ function OrderSuccessContent() {
           </div>
 
           {/* Stage 5: Primary Action Buttons */}
-          <div className="p-5 sm:p-6 bg-stone-50 border-t border-stone-200 flex flex-col sm:flex-row gap-3 justify-end animate-stage-5">
+          <div className="relative z-30 p-5 sm:p-6 bg-stone-50 border-t border-stone-200 flex flex-col sm:flex-row gap-3 justify-end">
             <Link
               href="/menu"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-stone-300 bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 text-xs font-bold transition shadow-2xs hover:shadow-sm text-center"
+              onClick={handleContinueShopping}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-stone-300 bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 text-xs font-bold transition shadow-2xs hover:shadow-sm text-center cursor-pointer select-none touch-manipulation active:scale-[0.98]"
             >
               <ShoppingBag className="w-4 h-4 text-stone-600" />
               <span>Continue Shopping</span>
             </Link>
             <Link
-              href={order?.id ? `/account/orders/${order.id}` : "/account/orders"}
-              onClick={() => {
-                if (typeof window !== "undefined" && order) {
-                  try {
-                    sessionStorage.setItem("fc_latest_order", JSON.stringify(order));
-                  } catch {}
-                }
-              }}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20 text-center"
+              href={trackOrderUrl}
+              onClick={handleTrackMyOrder}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20 text-center cursor-pointer select-none touch-manipulation active:scale-[0.98]"
             >
               <Truck className="w-4 h-4" />
               <span>Track My Order &bull; Track Status</span>

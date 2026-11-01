@@ -155,9 +155,8 @@ export const PromotionalCarousel: React.FC = () => {
                     type="button"
                     onClick={() => setCurrentIndex(idx)}
                     aria-label={`Go to slide ${idx + 1}`}
-                    className={`h-1.5 rounded-full transition-all ${
-                      idx === currentIndex ? "w-4 bg-rose-500" : "w-1.5 bg-stone-700 hover:bg-stone-500"
-                    }`}
+                    className={`h-1.5 rounded-full transition-all ${idx === currentIndex ? "w-4 bg-rose-500" : "w-1.5 bg-stone-700 hover:bg-stone-500"
+                      }`}
                   />
                 ))}
               </div>

@@ -10,7 +10,7 @@ export const Footer: React.FC = () => {
   const pathname = usePathname();
 
   // Hide on admin or delivery sub-surfaces
-  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery") || pathname.startsWith("/order-success")) {
     return null;
   }
 

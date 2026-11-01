@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRealTime } from "@/lib/useRealTime";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
@@ -23,9 +24,35 @@ import { ProductData, ProductVariantData } from "@/components/catalog/ProductCar
 
 export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ product }) => {
   const { addItem } = useCart();
+  const [currentProduct, setCurrentProduct] = useState(product);
+
+  useEffect(() => {
+    setCurrentProduct(product);
+  }, [product]);
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariantData>(
-    product.variants[0] || null
+    currentProduct.variants[0] || null
   );
+
+  useRealTime({
+    channels: ["catalog"],
+    onRefresh: async () => {
+      try {
+        const res = await fetch(`/api/products/${encodeURIComponent(product.slug)}`);
+        if (res.ok) {
+          const d = await res.json();
+          if (d.product) {
+            setCurrentProduct(d.product);
+            if (selectedVariant) {
+              const matched = d.currentProduct.variants.find((v: any) => v.id === selectedVariant.id);
+              if (matched) setSelectedVariant(matched);
+              else if (d.currentProduct.variants.length > 0) setSelectedVariant(d.currentProduct.variants[0]);
+            }
+          }
+        }
+      } catch {}
+    },
+  });
 
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -48,7 +75,7 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
   });
 
   const handleAddToCart = () => {
-    if (!selectedVariant || !product.isAvailable) return;
+    if (!selectedVariant || !currentProduct.isAvailable) return;
 
     const chosenCustomizations: { group: string; option: string; optionId: string; priceDeltaMinor: number }[] = [];
     let deltaSum = 0;
@@ -154,7 +181,7 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
                   <Clock className="w-3.5 h-3.5 text-charcoal-900" />
                   Coming Soon
                 </span>
-              ) : product.isAvailable ? (
+              ) : currentProduct.isAvailable ? (
                 <Badge variant="inStock" size="md">
                   In Stock &bull; Fresh Today
                 </Badge>
@@ -257,13 +284,13 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
           )}
 
           {/* Variant Selector */}
-          {product.variants.length > 1 && (
+          {currentProduct.variants.length > 1 && (
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-wider text-charcoal-500">
                 Choose Portion / Weight
               </label>
               <div className="grid grid-cols-2 gap-3">
-                {product.variants.map((v) => (
+                {currentProduct.variants.map((v) => (
                   <button
                     key={v.id}
                     onClick={() => setSelectedVariant(v)}
@@ -360,7 +387,7 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
               </div>
 
               {/* Add to Cart CTA */}
-              {product.isAvailable ? (
+              {currentProduct.isAvailable ? (
                 <Button
                   variant={added ? "secondary" : "primary"}
                   size="lg"

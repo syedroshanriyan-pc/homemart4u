@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { publishEvent } from "@/lib/events";
 
 export async function PATCH(
   req: NextRequest,
@@ -8,7 +9,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" )) {
+    if (!session || session.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
@@ -51,8 +52,50 @@ export async function PATCH(
       include: { variants: true, category: true },
     });
 
-    // If priceMinor or variant data was provided, update the primary variant
-    if (validPrice !== undefined || parsedMrp !== undefined || body.variantName || validQty !== undefined) {
+    // Handle nested array of variants if provided
+    if (Array.isArray(body.variants) && body.variants.length > 0) {
+      for (const v of body.variants) {
+        const vPrice = v.priceMinor !== undefined
+          ? parseInt(String(v.priceMinor), 10)
+          : (v.priceRs !== undefined ? Math.round(parseFloat(String(v.priceRs)) * 100) : undefined);
+        const vMrp = v.mrpMinor !== undefined && v.mrpMinor !== null
+          ? parseInt(String(v.mrpMinor), 10)
+          : (v.mrpRs !== undefined && v.mrpRs !== null && String(v.mrpRs).trim() !== ""
+            ? Math.round(parseFloat(String(v.mrpRs)) * 100)
+            : (v.mrpMinor === null || v.mrpRs === null ? null : undefined));
+
+        if (v.id) {
+          // Update existing variant
+          await prisma.productVariant.update({
+            where: { id: v.id },
+            data: {
+              name: v.name ? String(v.name).trim() : undefined,
+              priceMinor: vPrice,
+              mrpMinor: vMrp,
+              quantityValue: v.quantityValue ? parseInt(String(v.quantityValue), 10) : undefined,
+              quantityUnit: v.quantityUnit ? String(v.quantityUnit) : undefined,
+              pricingType: v.pricingType || body.productType || undefined,
+              isAvailable: v.isAvailable !== undefined ? Boolean(v.isAvailable) : undefined,
+            },
+          });
+        } else if (v.name && vPrice !== undefined) {
+          // Create new variant
+          await prisma.productVariant.create({
+            data: {
+              productId: id,
+              name: String(v.name).trim(),
+              priceMinor: vPrice,
+              mrpMinor: vMrp,
+              quantityValue: parseInt(String(v.quantityValue || 1000), 10),
+              quantityUnit: v.quantityUnit ? String(v.quantityUnit) : "g",
+              pricingType: v.pricingType || body.productType || "WEIGHT",
+              isAvailable: v.isAvailable !== undefined ? Boolean(v.isAvailable) : true,
+            },
+          });
+        }
+      }
+    } else if (validPrice !== undefined || parsedMrp !== undefined || body.variantName || validQty !== undefined) {
+      // Legacy single variant update
       const primaryVariant = product.variants[0];
       if (primaryVariant) {
         await prisma.productVariant.update({
@@ -71,7 +114,10 @@ export async function PATCH(
 
     const updatedProduct = await prisma.product.findUnique({
       where: { id },
-      include: { variants: true, category: true },
+      include: {
+        category: true,
+        variants: { orderBy: { priceMinor: "asc" } },
+      },
     });
 
     await prisma.auditLog.create({
@@ -83,6 +129,20 @@ export async function PATCH(
         metadataJson: JSON.stringify(body),
       },
     });
+
+    // Real-time broadcast
+    try {
+      publishEvent("catalog", "CATALOG_UPDATED", {
+        productId: id,
+        action: "PRODUCT_UPDATED",
+      });
+      publishEvent("admin", "CATALOG_UPDATED", {
+        productId: id,
+        action: "PRODUCT_UPDATED",
+      });
+    } catch (e) {
+      console.warn("Event publish failed:", e);
+    }
 
     return NextResponse.json({ success: true, product: updatedProduct });
   } catch (error) {
@@ -97,7 +157,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" )) {
+    if (!session || session.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
@@ -110,6 +170,12 @@ export async function DELETE(
       await prisma.productVariant.deleteMany({ where: { productId: id } });
       await prisma.customizationGroup.deleteMany({ where: { productId: id } });
       await prisma.product.delete({ where: { id } });
+      
+      try {
+        publishEvent("catalog", "CATALOG_UPDATED", { productId: id, action: "PRODUCT_DELETED" });
+        publishEvent("admin", "CATALOG_UPDATED", { productId: id, action: "PRODUCT_DELETED" });
+      } catch {}
+
       return NextResponse.json({ success: true, message: "Product permanently deleted" });
     }
 
@@ -127,6 +193,11 @@ export async function DELETE(
         entityId: id,
       },
     });
+
+    try {
+      publishEvent("catalog", "CATALOG_UPDATED", { productId: id, action: "PRODUCT_DEACTIVATED" });
+      publishEvent("admin", "CATALOG_UPDATED", { productId: id, action: "PRODUCT_DEACTIVATED" });
+    } catch {}
 
     return NextResponse.json({ success: true, message: "Product deactivated", product });
   } catch (error) {

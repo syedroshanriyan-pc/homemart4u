@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useRealTime } from "@/lib/useRealTime";
 import { useSearchParams } from "next/navigation";
 import { ProductCard, ProductData } from "@/components/catalog/ProductCard";
 import { HalalBadge } from "@/components/ui/HalalBadge";
@@ -29,6 +30,27 @@ export const MenuClient: React.FC<MenuClientProps> = ({
   const searchParams = useSearchParams();
   const urlCat = searchParams.get("cat") || searchParams.get("category");
   const initialCat = urlCat || defaultCategorySlug;
+
+  const [products, setProducts] = useState(initialProducts);
+
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [products]);
+
+  useRealTime({
+    channels: ["catalog"],
+    onRefresh: async () => {
+      try {
+        const res = await fetch("/api/products");
+        if (res.ok) {
+          const d = await res.json();
+          if (d.products) {
+            setProducts(d.products);
+          }
+        }
+      } catch {}
+    },
+  });
 
   const [selectedMeatCategory, setSelectedMeatCategory] = useState<string>(initialCat);
   const [meatSearchQuery, setMeatSearchQuery] = useState("");

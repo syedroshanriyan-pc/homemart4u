@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useRealTime } from "@/lib/useRealTime";
 import Link from "next/link";
 import {
   ShoppingBag,
@@ -29,6 +30,25 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
   categories,
   onBackToBlog,
 }) => {
+  const [liveProducts, setLiveProducts] = useState(products);
+
+  useEffect(() => {
+    setLiveProducts(products);
+  }, [liveProducts]);
+
+  useRealTime({
+    channels: ["catalog"],
+    onRefresh: async () => {
+      try {
+        const res = await fetch("/api/products");
+        if (res.ok) {
+          const d = await res.json();
+          if (d.products) setLiveProducts(d.products);
+        }
+      } catch {}
+    },
+  });
+
   const [selectedSubCat, setSelectedSubCat] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -44,7 +64,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
 
   // Exclude deactivated grocery products
   const meatProducts = useMemo(() => {
-    return products.filter((prod) => {
+    return liveProducts.filter((prod) => {
       const isGrocery =
         prod.category?.department === "GROCERY" ||
         [

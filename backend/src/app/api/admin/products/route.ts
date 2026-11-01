@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { publishEvent } from "@/lib/events";
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" )) {
+    if (!session || session.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" )) {
+    if (!session || session.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
@@ -52,11 +53,12 @@ export async function POST(req: NextRequest) {
       quantityValue = 1000,
       quantityUnit = "g",
       isAvailable = true,
+      variants, // optional array of variants
     } = body;
 
-    if (!name || !slug || !categoryId || priceMinor === undefined) {
+    if (!name || !slug || !categoryId) {
       return NextResponse.json(
-        { error: "Name, slug, category, and price are required." },
+        { error: "Name, slug, and category are required." },
         { status: 400 }
       );
     }
@@ -64,6 +66,48 @@ export async function POST(req: NextRequest) {
     const parsedMrp = mrpMinor !== undefined && mrpMinor !== null && String(mrpMinor).trim() !== ""
       ? parseInt(String(mrpMinor), 10)
       : null;
+
+    // Build variants to create
+    let variantCreateData: any;
+    if (Array.isArray(variants) && variants.length > 0) {
+      variantCreateData = {
+        create: variants.map((v: any) => {
+          const vPriceMinor = v.priceMinor !== undefined
+            ? parseInt(String(v.priceMinor), 10)
+            : Math.round(parseFloat(String(v.priceRs || 0)) * 100);
+          const vMrpMinor = v.mrpMinor !== undefined && v.mrpMinor !== null
+            ? parseInt(String(v.mrpMinor), 10)
+            : (v.mrpRs ? Math.round(parseFloat(String(v.mrpRs)) * 100) : null);
+          return {
+            name: v.name || "Standard Pack",
+            pricingType: v.pricingType || productType,
+            quantityValue: parseInt(String(v.quantityValue), 10) || 1000,
+            quantityUnit: v.quantityUnit || "g",
+            priceMinor: vPriceMinor,
+            mrpMinor: vMrpMinor,
+            isAvailable: v.isAvailable !== undefined ? Boolean(v.isAvailable) : true,
+          };
+        }),
+      };
+    } else {
+      if (priceMinor === undefined) {
+        return NextResponse.json(
+          { error: "Price is required to create a product variant." },
+          { status: 400 }
+        );
+      }
+      variantCreateData = {
+        create: {
+          name: variantName || "Standard Pack",
+          pricingType: productType,
+          quantityValue: parseInt(String(quantityValue), 10) || 1000,
+          quantityUnit,
+          priceMinor: parseInt(String(priceMinor), 10),
+          mrpMinor: parsedMrp,
+          isAvailable: true,
+        },
+      };
+    }
 
     const product = await prisma.product.create({
       data: {
@@ -79,17 +123,7 @@ export async function POST(req: NextRequest) {
         mrpMinor: parsedMrp,
         savePriceText: savePriceText?.trim() || null,
         badgeText: badgeText?.trim() || null,
-        variants: {
-          create: {
-            name: variantName || "Standard Pack",
-            pricingType: productType,
-            quantityValue: parseInt(quantityValue, 10) || 1000,
-            quantityUnit,
-            priceMinor: parseInt(priceMinor, 10),
-            mrpMinor: parsedMrp,
-            isAvailable: true,
-          },
-        },
+        variants: variantCreateData,
       },
       include: {
         category: true,
@@ -106,6 +140,19 @@ export async function POST(req: NextRequest) {
         metadataJson: JSON.stringify({ name: product.name, slug: product.slug }),
       },
     });
+
+    try {
+      publishEvent("catalog", "CATALOG_UPDATED", {
+        productId: product.id,
+        action: "PRODUCT_CREATED",
+      });
+      publishEvent("admin", "CATALOG_UPDATED", {
+        productId: product.id,
+        action: "PRODUCT_CREATED",
+      });
+    } catch (e) {
+      console.warn("Event publish failed:", e);
+    }
 
     return NextResponse.json({ success: true, product });
   } catch (error: any) {

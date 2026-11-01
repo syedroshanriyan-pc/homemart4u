@@ -286,6 +286,35 @@ export const ProductCard: React.FC<{
             )}
           </div>
 
+          {/* Multiple Variant Selector Chips (e.g. 500g, 1kg, 1.5kg, 2kg) */}
+          {product.variants && product.variants.length > 1 && (
+            <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+              {product.variants.map((v) => {
+                const isSelected = selectedVariant?.id === v.id;
+                const vPrice = Math.round(v.priceMinor / 100);
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedVariant(v);
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all border ${
+                      isSelected
+                        ? "bg-stone-900 border-stone-900 text-white shadow-2xs"
+                        : "bg-cream-50 border-cream-200 text-charcoal-700 hover:bg-cream-100"
+                    }`}
+                  >
+                    <span>{v.name}</span>
+                    <span className="ml-1 opacity-80 font-mono">₹{vPrice}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="mt-4 pt-3 border-t border-cream-200 flex items-center justify-between gap-2">
             <div>
               <span className="text-[10px] uppercase font-semibold text-charcoal-400 block tracking-wider">

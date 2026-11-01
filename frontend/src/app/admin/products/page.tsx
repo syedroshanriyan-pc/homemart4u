@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { HalalBadge } from "@/components/ui/HalalBadge";
+import { useRealTime } from "@/lib/useRealTime";
 import { FoodTypeBadge, FoodType } from "@/components/ui/FoodTypeBadge";
 import {
   Plus,
@@ -74,6 +75,34 @@ export default function AdminProductsPage() {
   // Modal State (Create or Edit)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
+
+  // Dedicated Quick Variants Modal State
+  const [variantModalProduct, setVariantModalProduct] = useState<ProductItem | null>(null);
+  const [newVariantForm, setNewVariantForm] = useState({
+    name: "500g",
+    quantityValue: "500",
+    quantityUnit: "g",
+    priceRs: "",
+    mrpRs: "",
+    isAvailable: true,
+  });
+  const [isAddingVariant, setIsAddingVariant] = useState(false);
+  const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
+
+  // Multi-variant state for Create/Edit Modal
+  interface FormVariant {
+    id?: string;
+    name: string;
+    quantityValue: number | string;
+    quantityUnit: string;
+    priceRs: string;
+    mrpRs: string;
+    isAvailable: boolean;
+  }
+  const [formVariants, setFormVariants] = useState<FormVariant[]>([
+    { name: "500g", quantityValue: "500", quantityUnit: "g", priceRs: "", mrpRs: "", isAvailable: true },
+    { name: "1 kg", quantityValue: "1000", quantityUnit: "g", priceRs: "", mrpRs: "", isAvailable: true },
+  ]);
 
   // Form Fields
   const [department, setDepartment] = useState<"MEAT" | "GROCERY">("MEAT");
@@ -298,6 +327,161 @@ export default function AdminProductsPage() {
       alert("Error creating subcategory");
     } finally {
       setCreatingCat(false);
+    }
+  };
+
+    // Preset variant adder for main form
+  const handleAddPresetVariant = (preset: "500g" | "1kg" | "1.5kg" | "2kg" | "custom") => {
+    const presetsMap = {
+      "500g": { name: "500g", quantityValue: 500, quantityUnit: "g" },
+      "1kg": { name: "1 kg", quantityValue: 1000, quantityUnit: "g" },
+      "1.5kg": { name: "1.5 kg", quantityValue: 1500, quantityUnit: "g" },
+      "2kg": { name: "2 kg", quantityValue: 2000, quantityUnit: "g" },
+      custom: { name: "", quantityValue: 1000, quantityUnit: "g" },
+    };
+    const chosen = presetsMap[preset];
+    setFormVariants((prev) => [
+      ...prev,
+      {
+        name: chosen.name,
+        quantityValue: chosen.quantityValue,
+        quantityUnit: chosen.quantityUnit,
+        priceRs: "",
+        mrpRs: "",
+        isAvailable: true,
+      },
+    ]);
+  };
+
+  const handleRemoveFormVariant = (index: number) => {
+    if (formVariants.length <= 1) {
+      alert("A product must have at least one variant.");
+      return;
+    }
+    setFormVariants((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleUpdateFormVariant = (index: number, field: string, val: any) => {
+    setFormVariants((prev) =>
+      prev.map((v, idx) => (idx === index ? { ...v, [field]: val } : v))
+    );
+  };
+
+  // Quick Variant Modal actions
+  const openVariantsModal = (prod: ProductItem) => {
+    setVariantModalProduct(prod);
+    setNewVariantForm({
+      name: "500g",
+      quantityValue: "500",
+      quantityUnit: "g",
+      priceRs: "",
+      mrpRs: "",
+      isAvailable: true,
+    });
+  };
+
+  const handleAddQuickVariant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!variantModalProduct) return;
+    if (!newVariantForm.name.trim() || !newVariantForm.priceRs || isNaN(parseFloat(newVariantForm.priceRs))) {
+      alert("Please enter variant name and a valid selling price");
+      return;
+    }
+
+    setIsAddingVariant(true);
+    try {
+      const res = await fetch(`/api/admin/products/${variantModalProduct.id}/variants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newVariantForm.name.trim(),
+          quantityValue: parseInt(newVariantForm.quantityValue, 10) || 1000,
+          quantityUnit: newVariantForm.quantityUnit || "g",
+          priceRs: parseFloat(newVariantForm.priceRs),
+          mrpRs: newVariantForm.mrpRs ? parseFloat(newVariantForm.mrpRs) : null,
+          isAvailable: newVariantForm.isAvailable,
+        }),
+      });
+
+      if (res.ok) {
+        showStatus(`Added "${newVariantForm.name}" variant successfully!`);
+        // Refresh product in modal and list
+        const updatedRes = await fetch("/api/admin/products");
+        if (updatedRes.ok) {
+          const d = await updatedRes.json();
+          setProducts(d.products || []);
+          const updatedProd = (d.products || []).find((p: any) => p.id === variantModalProduct.id);
+          if (updatedProd) setVariantModalProduct(updatedProd);
+        }
+        setNewVariantForm({
+          name: "1.5 kg",
+          quantityValue: "1500",
+          quantityUnit: "g",
+          priceRs: "",
+          mrpRs: "",
+          isAvailable: true,
+        });
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to add variant");
+      }
+    } catch {
+      alert("Error adding variant");
+    } finally {
+      setIsAddingVariant(false);
+    }
+  };
+
+  const handleDeleteQuickVariant = async (variantId: string, variantName: string) => {
+    if (!variantModalProduct) return;
+    if (variantModalProduct.variants.length <= 1) {
+      alert("Cannot delete the only variant. Add another variant first.");
+      return;
+    }
+    if (!confirm(`Are you sure you want to remove variant "${variantName}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/products/${variantModalProduct.id}/variants/${variantId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        showStatus(`Variant "${variantName}" deleted`);
+        const updatedRes = await fetch("/api/admin/products");
+        if (updatedRes.ok) {
+          const d = await updatedRes.json();
+          setProducts(d.products || []);
+          const updatedProd = (d.products || []).find((p: any) => p.id === variantModalProduct.id);
+          if (updatedProd) setVariantModalProduct(updatedProd);
+        }
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to delete variant");
+      }
+    } catch {
+      alert("Error deleting variant");
+    }
+  };
+
+  const handleToggleQuickVariantStock = async (variantId: string, current: boolean) => {
+    if (!variantModalProduct) return;
+    try {
+      const res = await fetch(`/api/admin/products/${variantModalProduct.id}/variants/${variantId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isAvailable: !current }),
+      });
+      if (res.ok) {
+        showStatus("Variant availability toggled");
+        const updatedRes = await fetch("/api/admin/products");
+        if (updatedRes.ok) {
+          const d = await updatedRes.json();
+          setProducts(d.products || []);
+          const updatedProd = (d.products || []).find((p: any) => p.id === variantModalProduct.id);
+          if (updatedProd) setVariantModalProduct(updatedProd);
+        }
+      }
+    } catch {
+      showStatus("Error toggling variant stock", "error");
     }
   };
 
@@ -1122,71 +1306,171 @@ export default function AdminProductsPage() {
             )}
           </div>
 
-          {/* STEP 6: PACK / VARIANT DETAILS */}
-          <div className="space-y-3 pt-2 border-t border-stone-200">
-            <label className="text-xs font-bold uppercase tracking-wider text-stone-600 block">
-              Step 6: Pack / Weight Variant Details
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          {/* STEP 6: MULTI-VARIANT & WEIGHT PACK DETAILS (500g, 1kg, 1.5kg, 2kg, etc.) */}
+          <div className="space-y-3 pt-3 border-t border-stone-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                  Variant / Pack Label
+                <label className="text-xs font-bold uppercase tracking-wider text-stone-700 block">
+                  Step 6: Product Portions &amp; Weight Variants
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 1 kg Pack, 500g"
-                  value={variantName}
-                  onChange={(e) => setVariantName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 focus:outline-none font-medium"
-                />
+                <p className="text-[11px] text-stone-500">
+                  Add custom pack sizes (e.g. 500g, 1kg, 1.5kg, 2kg) with independent prices and live stock toggles.
+                </p>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                  Quantity Value
-                </label>
-                <input
-                  type="number"
-                  required
-                  value={quantityValue}
-                  onChange={(e) => setQuantityValue(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 font-mono focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                  Unit
-                </label>
-                <select
-                  value={quantityUnit}
-                  onChange={(e) => setQuantityUnit(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 focus:outline-none"
+              {/* Quick Preset Buttons */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] uppercase font-bold text-stone-400">Quick Add:</span>
+                <button
+                  type="button"
+                  onClick={() => handleAddPresetVariant("500g")}
+                  className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200 transition"
                 >
-                  <option value="g">Grams (g)</option>
-                  <option value="kg">Kilograms (kg)</option>
-                  <option value="pc">Piece (pc)</option>
-                  <option value="pack">Pack</option>
-                  <option value="ml">Milliliters (ml)</option>
-                  <option value="L">Liters (L)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                  Stock Status
-                </label>
-                <select
-                  value={isAvailable ? "IN_STOCK" : "OUT_OF_STOCK"}
-                  onChange={(e) => setIsAvailable(e.target.value === "IN_STOCK")}
-                  className="w-full px-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 focus:outline-none"
+                  + 500g
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddPresetVariant("1kg")}
+                  className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200 transition"
                 >
-                  <option value="IN_STOCK">In Stock</option>
-                  <option value="OUT_OF_STOCK">Out of Stock</option>
-                </select>
+                  + 1 kg
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddPresetVariant("1.5kg")}
+                  className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200 transition"
+                >
+                  + 1.5 kg
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddPresetVariant("2kg")}
+                  className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200 transition"
+                >
+                  + 2 kg
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddPresetVariant("custom")}
+                  className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition"
+                >
+                  + Custom
+                </button>
               </div>
+            </div>
+
+            {/* List of Form Variants */}
+            <div className="space-y-2.5">
+              {formVariants.map((v, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 bg-stone-50 border border-stone-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-2.5 shadow-2xs"
+                >
+                  <div className="flex-1 grid grid-cols-2 sm:grid-cols-6 gap-2 w-full">
+                    {/* Variant Name */}
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-semibold text-stone-500 mb-0.5">
+                        Variant / Pack Label
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 500g, 1 kg Pack"
+                        value={v.name}
+                        onChange={(e) => handleUpdateFormVariant(idx, "name", e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-stone-200 rounded-xl text-stone-800 font-semibold focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Weight / Qty Value */}
+                    <div>
+                      <label className="block text-[10px] font-semibold text-stone-500 mb-0.5">
+                        Quantity
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        value={v.quantityValue}
+                        onChange={(e) => handleUpdateFormVariant(idx, "quantityValue", e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-stone-200 rounded-xl text-stone-800 font-mono focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Unit */}
+                    <div>
+                      <label className="block text-[10px] font-semibold text-stone-500 mb-0.5">
+                        Unit
+                      </label>
+                      <select
+                        value={v.quantityUnit}
+                        onChange={(e) => handleUpdateFormVariant(idx, "quantityUnit", e.target.value)}
+                        className="w-full px-2 py-1.5 text-xs bg-white border border-stone-200 rounded-xl text-stone-800 focus:outline-none"
+                      >
+                        <option value="g">Grams (g)</option>
+                        <option value="kg">Kilograms (kg)</option>
+                        <option value="pc">Piece (pc)</option>
+                        <option value="pack">Pack</option>
+                      </select>
+                    </div>
+
+                    {/* Selling Price */}
+                    <div>
+                      <label className="block text-[10px] font-semibold text-stone-500 mb-0.5">
+                        Selling Price (₹) *
+                      </label>
+                      <input
+                        type="number"
+                        step="1"
+                        required
+                        placeholder="₹"
+                        value={v.priceRs}
+                        onChange={(e) => handleUpdateFormVariant(idx, "priceRs", e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-stone-200 rounded-xl text-stone-900 font-mono font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    {/* MRP */}
+                    <div>
+                      <label className="block text-[10px] font-semibold text-stone-500 mb-0.5">
+                        MRP (₹)
+                      </label>
+                      <input
+                        type="number"
+                        step="1"
+                        placeholder="₹"
+                        value={v.mrpRs}
+                        onChange={(e) => handleUpdateFormVariant(idx, "mrpRs", e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-stone-200 rounded-xl text-stone-500 font-mono focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions: Stock toggle & Delete */}
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0 pt-1 sm:pt-0">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateFormVariant(idx, "isAvailable", !v.isAvailable)}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition ${
+                        v.isAvailable
+                          ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                          : "bg-stone-200 border-stone-300 text-stone-600"
+                      }`}
+                    >
+                      {v.isAvailable ? "IN STOCK" : "OUT"}
+                    </button>
+                    {formVariants.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFormVariant(idx)}
+                        className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        title="Remove Variant"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

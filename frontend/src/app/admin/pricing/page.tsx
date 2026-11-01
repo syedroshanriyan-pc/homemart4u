@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { DollarSign, Save, RefreshCw, TrendingUp, AlertCircle, CheckCircle2, Search, ShoppingBag } from "lucide-react";
 import { formatCurrency } from "@/lib/delivery";
+import { useRealTime } from "@/lib/useRealTime";
 
 interface Variant {
   id: string;

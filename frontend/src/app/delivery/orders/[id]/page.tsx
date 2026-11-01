@@ -154,8 +154,8 @@ export default function DeliveryOrderDetailPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          collectionMethod: "UPI_MANUAL_VERIFIED",
-          notes: "Doorstep UPI manual agent confirmation",
+          collectionMethod: "UPI_MANUAL",
+          notes: "UPI — Manually Confirmed by Delivery Agent",
         }),
       });
       const data = await res.json();
@@ -537,7 +537,7 @@ export default function DeliveryOrderDetailPage() {
                   {formatCurrency(ord.totalMinor)}
                 </span>
                 <span className="text-[11px] block font-mono text-charcoal-500 mt-0.5">
-                  Merchant: Fresh Chicken Centre (7975137618@okbizaxis)
+                  Merchant: {qrData.payeeName || "Fresh Chicken Centre"} ({qrData.vpa || "7975137618@okbizaxis"})
                 </span>
               </div>
 
@@ -556,7 +556,7 @@ export default function DeliveryOrderDetailPage() {
                 className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <CheckCircle2 className="w-4 h-4 text-white" />
-                <span>{actionLoading ? "Recording Collection..." : "Payment Completed (Confirmed in App)"}</span>
+                <span>{actionLoading ? "Recording Collection..." : "Payment Received — Confirm Delivery (UPI Manually Confirmed)"}</span>
               </button>
 
 

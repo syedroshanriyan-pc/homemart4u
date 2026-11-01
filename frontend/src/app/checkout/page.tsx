@@ -7,7 +7,6 @@ import { useCart } from "@/context/CartContext";
 import { useAuth, UserAddress } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { LocationModal } from "@/components/ui/LocationModal";
-import { DynamicPaymentModal } from "@/components/payment/DynamicPaymentModal";
 import {
   MapPin,
   CreditCard,
@@ -36,12 +35,7 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
-  const [upiOrderData, setUpiOrderData] = useState<{
-    orderId: string;
-    orderNumber: string;
-    amountRupees: number;
-  } | null>(null);
+  
   const idempotencyKeyRef = useRef<string>("");
   const isOrderPlacedRef = useRef(false);
 
@@ -108,37 +102,6 @@ export default function CheckoutPage() {
     (validation
       ? validation.totalMinor
       : (previewCalculation.totalMinor + previewCalculation.codFeeMinor)) / 100;
-
-  
-  const handleSwitchToCod = async (orderIdToSwitch: string) => {
-    try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("fc_token") : null;
-      const switchRes = await fetch(`/api/orders/${orderIdToSwitch}/switch-cod`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: "include",
-      });
-      const switchData = await switchRes.json().catch(() => ({}));
-      if (switchRes.ok && switchData.success) {
-        isOrderPlacedRef.current = true;
-        if (typeof window !== "undefined" && switchData.order) {
-          try {
-            sessionStorage.setItem("fc_latest_order", JSON.stringify(switchData.order));
-          } catch {}
-        }
-        clearCart();
-        setUpiOrderData(null);
-        window.location.href = `/order-success?orderId=${orderIdToSwitch}&method=COD`;
-      } else {
-        setErrorMessage(switchData.error || "Failed to switch to COD.");
-      }
-    } catch {
-      setErrorMessage("Network issue switching to COD.");
-    }
-  };
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -307,7 +270,7 @@ export default function CheckoutPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-stone-900">
-                    Cash on Delivery &bull; Homemart4u Pay (Dynamic UPI QR)
+                    Cash on Delivery (COD)
                   </span>
                 </div>
                 <p className="text-[11px] text-stone-600 leading-relaxed">
@@ -437,22 +400,7 @@ export default function CheckoutPage() {
         onClose={() => setIsLocationModalOpen(false)}
       />
 
-      {upiOrderData && (
-        <DynamicPaymentModal
-          isOpen={true}
-          orderId={upiOrderData.orderId}
-          orderNumber={upiOrderData.orderNumber}
-          amountRupees={upiOrderData.amountRupees}
-          onClose={() => setUpiOrderData(null)}
-          onSwitchToCod={handleSwitchToCod}
-          onSuccess={(finalOrderId) => {
-            isOrderPlacedRef.current = true;
-            clearCart();
-            setUpiOrderData(null);
-            window.location.href = `/order-success?orderId=${finalOrderId}&method=ONLINE`;
-          }}
-        />
-      )}
+      
 
 
     </div>

@@ -54,6 +54,7 @@ export function verifyJwtToken(token: string): SessionUser | null {
 /**
  * Extracts and verifies the current session user from cookies or Authorization header.
  * Automatically checks the database for authoritative, real-time role changes.
+ * Security: Database check failures fail closed (return null, never stale token role).
  */
 export async function getSessionUser(req?: NextRequest): Promise<SessionUser | null> {
   let token: string | undefined;
@@ -93,8 +94,9 @@ export async function getSessionUser(req?: NextRequest): Promise<SessionUser | n
       email: dbUser.email,
       role: dbUser.role as UserRole,
     };
-  } catch {
-    return payload;
+  } catch (error) {
+    console.error("[AUTH_FAIL_CLOSED] Database verification failed during getSessionUser:", error);
+    return null;
   }
 }
 

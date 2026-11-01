@@ -263,7 +263,7 @@ describe("Homemart4u — Secure Dynamic UPI QR Payment Integration Suite", () =>
       const checkoutContent = fs.readFileSync(resolveFile("src/app/checkout/page.tsx"), "utf-8");
       const modalContent = fs.readFileSync(resolveFile("src/components/payment/DynamicPaymentModal.tsx"), "utf-8");
 
-      assert.ok(checkoutContent.includes("Homemart4u Pay (Dynamic UPI QR)"), "Checkout must label option as Homemart4u Pay");
+      assert.ok(checkoutContent.includes("Cash on Delivery (COD)") || checkoutContent.includes("COD"), "Checkout must support Cash on Delivery");
       assert.ok(!checkoutContent.includes("Razorpay Gateway:"), "Checkout must remove Razorpay commercial branding");
       assert.ok(modalContent.includes("Homemart4u Pay • Dynamic UPI QR") || modalContent.includes("Homemart4u Pay &bull; Dynamic UPI QR"), "Modal header must brand as Homemart4u Pay");
     });

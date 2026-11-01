@@ -8,14 +8,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
 
-describe("Frontend Payment UI, COD Switching & Animations", () => {
-  it("checkout page must track activeOrderId and pass onSwitchToCod to modal", () => {
+describe("Frontend Payment UI, COD Policy & Animations", () => {
+  it("checkout page must enforce Cash on Delivery only and remove customer online payment options", () => {
     const checkoutPagePath = path.join(rootDir, "src", "app", "checkout", "page.tsx");
     assert.ok(fs.existsSync(checkoutPagePath), "Checkout page must exist");
     const content = fs.readFileSync(checkoutPagePath, "utf-8");
-    assert.ok(content.includes("activeOrderId"), "Checkout page must track activeOrderId");
-    assert.ok(content.includes("switch-cod"), "Checkout page must call switch-cod when switching to COD");
-    assert.ok(content.includes("onSwitchToCod"), "DynamicPaymentModal must receive onSwitchToCod prop");
+    assert.ok(content.includes("Cash on Delivery"), "Checkout page must display Cash on Delivery");
+    assert.ok(content.includes('paymentMethod: "COD"'), "Checkout page must submit COD paymentMethod");
+    assert.ok(!content.includes("<DynamicPaymentModal"), "DynamicPaymentModal must not be rendered on customer checkout");
   });
 
   it("globals.css must define fintech checkmark, crossmark, and reduced-motion animations", () => {

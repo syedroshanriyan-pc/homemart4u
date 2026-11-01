@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notificationProvider } from "@/lib/adapters/NotificationProvider";
+import { publishEvent } from "@/lib/events";
 
 export async function POST(
   req: NextRequest,
@@ -9,7 +10,7 @@ export async function POST(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" )) {
+    if (!session || (session.role !== "ADMIN")) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
@@ -77,6 +78,21 @@ export async function POST(
 
       return ord;
     });
+
+    try {
+      publishEvent("admin", "ORDER_STATUS_CHANGED", {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        from: order.status,
+        to: status,
+      });
+      publishEvent(`order:${order.id}`, "ORDER_STATUS_CHANGED", {
+        orderId: order.id,
+        status,
+      });
+    } catch (e) {
+      console.warn("Event publish skipped:", e);
+    }
 
     // Send transactional notification
     const notificationTypes: Record<string, any> = {

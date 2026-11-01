@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { publishEvent } from "@/lib/events";
 
 export async function POST(
   req: NextRequest,
@@ -8,7 +9,7 @@ export async function POST(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" )) {
+    if (!session || (session.role !== "ADMIN")) {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
@@ -82,6 +83,24 @@ export async function POST(
 
       return assign;
     });
+
+    try {
+      publishEvent("admin", "AGENT_ASSIGNED", {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        agentId: agent.id,
+      });
+      publishEvent(`agent:${agent.id}`, "ASSIGNMENT_NEW", {
+        orderId: order.id,
+        assignmentId: assignment.id,
+      });
+      publishEvent(`order:${order.id}`, "AGENT_ASSIGNED", {
+        orderId: order.id,
+        agentName: agent.name,
+      });
+    } catch (e) {
+      console.warn("Event publish skipped:", e);
+    }
 
     return NextResponse.json({ success: true, assignment });
   } catch (error) {

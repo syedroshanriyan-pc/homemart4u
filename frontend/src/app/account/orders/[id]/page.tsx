@@ -21,8 +21,7 @@ import {
   Check,
 } from "lucide-react";
 import { OrderDetailSkeleton } from "@/components/ui/Skeleton";
-import { DynamicPaymentModal } from "@/components/payment/DynamicPaymentModal";
-
+import { useRealTime } from "@/lib/useRealTime";
 export default function OrderTrackingPage() {
   const params = useParams();
   const router = useRouter();
@@ -48,17 +47,13 @@ export default function OrderTrackingPage() {
   const [isCancelling, setIsCancelling] = useState(false);
 
   // Dynamic Payment Modal state
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   // 20-Minute Live Delivery Countdown Timer State
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
 
   // 3-Minute Cancellation Window Timer State
   const [cancelSecondsRemaining, setCancelSecondsRemaining] = useState<number | null>(null);
-
-  const isPrepaidOrder = Boolean(
-    order?.payment && (order.payment.method !== "COD" || order.payment.status === "COMPLETED")
-  );
+  const isPrepaidOrder = false;
 
   useEffect(() => {
     if (!order?.placedAt || order.status === "DELIVERED" || order.status === "CANCELLED") {
@@ -607,15 +602,10 @@ export default function OrderTrackingPage() {
             </div>
 
             {order.payment?.status === "PENDING" && order.status !== "CANCELLED" && (
-              <div className="pt-3 border-t border-cream-200">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setIsPaymentModalOpen(true)}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-sm"
-                >
-                  Pay via Dynamic QR / GPay / PhonePe
-                </Button>
+              <div className="pt-3 border-t border-cream-200 text-center">
+                <p className="text-xs text-charcoal-600 font-medium">
+                  Pay at doorstep upon delivery via Cash or UPI QR.
+                </p>
               </div>
             )}
           </div>
@@ -675,112 +665,6 @@ export default function OrderTrackingPage() {
           </Button>
         </form>
       </Modal>
-
-      {/* Printable Invoice Modal */}
-      <Modal
-        isOpen={isInvoiceModalOpen}
-        onClose={() => setIsInvoiceModalOpen(false)}
-        title={`Invoice: INV-${order.orderNumber}`}
-        maxWidth="lg"
-      >
-        {invoiceData ? (
-          <div className="space-y-5 text-xs font-sans text-charcoal-700 p-2">
-            <div className="flex justify-between items-start border-b border-cream-200 pb-4">
-              <div>
-                <h3 className="font-serif text-lg font-bold text-charcoal-800">
-                  {invoiceData.shop.name}
-                </h3>
-                <p className="text-[11px] text-charcoal-500">{invoiceData.shop.tagline}</p>
-                <p className="text-[11px] text-charcoal-400 mt-1">{invoiceData.shop.address}</p>
-                <p className="text-[11px] text-charcoal-400">Phone: {invoiceData.shop.phone}</p>
-              </div>
-              <div className="text-right">
-                <span className="font-mono font-bold text-sm text-charcoal-800">
-                  {invoiceData.invoiceNumber}
-                </span>
-                <p className="text-[11px] text-charcoal-400 mt-0.5">
-                  Date: {new Date(invoiceData.date).toLocaleDateString("en-IN")}
-                </p>
-                <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200">
-                  {invoiceData.summary.paymentStatus}
-                </span>
-              </div>
-            </div>
-
-            {/* Customer Details */}
-            <div className="bg-cream-100/70 p-3 rounded-xl border border-cream-200">
-              <p className="font-bold text-charcoal-800">{invoiceData.customer.name}</p>
-              <p className="text-charcoal-500">Mobile: {invoiceData.customer.mobile}</p>
-              <p className="text-charcoal-500 mt-0.5">{invoiceData.customer.address?.addressLine}, Mulbagal</p>
-            </div>
-
-            {/* Itemized Table */}
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-cream-200 text-[11px] text-charcoal-400 uppercase">
-                  <th className="py-2">Item</th>
-                  <th className="py-2 text-center">Qty</th>
-                  <th className="py-2 text-right">Rate</th>
-                  <th className="py-2 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-cream-100">
-                {invoiceData.items.map((it: any, idx: number) => (
-                  <tr key={idx} className="py-2">
-                    <td className="py-2 font-medium">{it.productName} ({it.variantName})</td>
-                    <td className="py-2 text-center font-mono">{it.quantity}</td>
-                    <td className="py-2 text-right font-mono">₹{it.unitPriceRs}</td>
-                    <td className="py-2 text-right font-mono font-semibold">₹{it.lineTotalRs}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Bill Summary */}
-            <div className="border-t border-cream-200 pt-3 space-y-1.5 text-right font-mono">
-              <p>Subtotal: ₹{invoiceData.summary.subtotalRs}</p>
-              {parseFloat(invoiceData.summary.discountRs) > 0 && (
-                <p className="text-emerald-700">Discount: -₹{invoiceData.summary.discountRs}</p>
-              )}
-              <p>Delivery: ₹{invoiceData.summary.deliveryFeeRs}</p>
-              {parseFloat(invoiceData.summary.codFeeRs) > 0 && (
-                <p>COD Fee: ₹{invoiceData.summary.codFeeRs}</p>
-              )}
-              <p className="text-sm font-bold text-charcoal-800 pt-1 border-t border-cream-200">
-                Total: ₹{invoiceData.summary.totalRs}
-              </p>
-            </div>
-
-            <div className="pt-2 text-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.print()}
-                className="text-xs"
-              >
-                Print / Save PDF
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs text-charcoal-400 py-4 text-center">Loading invoice...</p>
-        )}
-      </Modal>
-
-      {/* Dynamic Payment Modal */}
-      {order && isPaymentModalOpen && (
-        <DynamicPaymentModal
-          isOpen={isPaymentModalOpen}
-          orderId={order.id}
-          orderNumber={order.orderNumber}
-          amountRupees={order.totalMinor / 100}
-          onClose={() => setIsPaymentModalOpen(false)}
-          onSuccess={() => {
-            setIsPaymentModalOpen(false);
-            fetchOrder();
-          }}
-        />
-      )}
     </div>
   );
 }

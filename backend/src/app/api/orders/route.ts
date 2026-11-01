@@ -16,6 +16,7 @@ import { sanitizeText, sanitizeAddress } from "@/lib/security";
 import { allocateUniqueOrderNumber, generateCollisionResistantOrderNumber } from "@/lib/order-number";
 import { sendWhatsAppOrderSummary } from "@/lib/whatsapp";
 import { Prisma } from "@prisma/client";
+import { publishEvent } from "@/lib/events";
 
 export async function GET(req: NextRequest) {
   try {
@@ -71,12 +72,24 @@ export async function POST(req: NextRequest) {
       addressId,
       customAddress,
       couponCode,
-      paymentMethod = "COD",
       notes,
       existingOrderId,
       orderId,
       idempotencyKey,
     } = body;
+
+    // Strict COD-Only Payment Policy: Reject any attempt to submit online payment methods
+    if (body.paymentMethod && String(body.paymentMethod).toUpperCase() !== "COD") {
+      return NextResponse.json(
+        {
+          error: "Online customer pre-payment is not supported. Homemart4u checkout is Cash on Delivery (COD) only. Pay at doorstep upon delivery.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Force server-authoritative payment method: Cash on Delivery ONLY
+    const paymentMethod = "COD";
 
     const sanitizedNotes = notes ? sanitizeText(notes, 300) : null;
 
@@ -399,8 +412,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 9. COD Surcharge & Final Total
-    const codFeeMinor = paymentMethod === "COD" ? COD_SURCHARGE_PAISE : 0;
+    // 9. COD Surcharge & Final Total (COD Only)
+    const codFeeMinor = COD_SURCHARGE_PAISE;
     const totalMinor = Math.max(0, subtotalMinor - discountMinor + deliveryFeeMinor + codFeeMinor);
 
     // 10. Atomic Order Creation with Bounded Retry on OrderNumber Collision (P2002)
@@ -435,11 +448,11 @@ export async function POST(req: NextRequest) {
             },
             payment: {
               create: {
-                method: paymentMethod,
+                method: "COD",
                 status: "PENDING",
                 amountMinor: totalMinor,
-                provider: paymentMethod === "COD" ? "CASH_ON_DELIVERY" : "GATEWAY_UPI",
-                providerReference: `${paymentMethod}_${orderNumber}_${Date.now()}`,
+                provider: "CASH_ON_DELIVERY",
+                providerReference: `COD_${orderNumber}_${Date.now()}`,
               },
             },
           };

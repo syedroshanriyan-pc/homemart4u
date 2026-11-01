@@ -37,6 +37,8 @@ export interface CreatePaySessionParams {
 }
 
 export interface PaySessionResult {
+  vpa?: string;
+  payeeName?: string;
   success: boolean;
   sessionId: string;
   provider: string;
@@ -91,21 +93,25 @@ export class Homemart4uPayEngine {
   async getMerchantConfig(): Promise<{ vpa: string; payeeName: string }> {
     try {
       const records = await prisma.systemSetting.findMany({
-        where: { key: { in: ["UPI_VPA", "UPI_MERCHANT_NAME"] } },
+        where: { key: { in: ["MERCHANT_UPI_VPA", "UPI_VPA", "MERCHANT_NAME", "UPI_MERCHANT_NAME"] } },
       });
       const vpa =
+        records.find((r) => r.key === "MERCHANT_UPI_VPA")?.value?.trim() ||
         records.find((r) => r.key === "UPI_VPA")?.value?.trim() ||
+        process.env.MERCHANT_UPI_VPA ||
         process.env.UPI_VPA ||
         "7975137618@okbizaxis";
       const payeeName =
+        records.find((r) => r.key === "MERCHANT_NAME")?.value?.trim() ||
         records.find((r) => r.key === "UPI_MERCHANT_NAME")?.value?.trim() ||
+        process.env.MERCHANT_NAME ||
         process.env.NEXT_PUBLIC_UPI_MERCHANT_NAME ||
         "Fresh Chicken Centre";
       return { vpa, payeeName };
     } catch {
       return {
-        vpa: process.env.UPI_VPA || "7975137618@okbizaxis",
-        payeeName: process.env.NEXT_PUBLIC_UPI_MERCHANT_NAME || "Fresh Chicken Centre",
+        vpa: process.env.MERCHANT_UPI_VPA || process.env.UPI_VPA || "7975137618@okbizaxis",
+        payeeName: process.env.MERCHANT_NAME || process.env.NEXT_PUBLIC_UPI_MERCHANT_NAME || "Fresh Chicken Centre",
       };
     }
   }
@@ -191,6 +197,8 @@ export class Homemart4uPayEngine {
       orderNumber,
       expiresInSeconds,
       expiresAt,
+      vpa,
+      payeeName,
       status: "PENDING",
       intentLinks: {
         gpayUrl: intentLinks.gpayUrl,

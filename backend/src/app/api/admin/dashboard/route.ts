@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "ADMIN" )) {
+    if (!session || session.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
@@ -14,18 +14,10 @@ export async function GET(req: NextRequest) {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const activeOrderCondition = {
-      OR: [
-        { payment: { method: "COD" } },
-        { payment: { status: "COMPLETED" } },
-      ],
-    };
-
-    // 1. Orders today (excluding unpaid online checkouts)
+    // 1. Orders today (all non-cancelled orders)
     const ordersToday = await prisma.order.findMany({
       where: {
         createdAt: { gte: startOfToday },
-        ...activeOrderCondition,
       },
       select: {
         id: true,
@@ -53,40 +45,12 @@ export async function GET(req: NextRequest) {
 
     const aovMinor = todayOrderCount > 0 ? Math.round(todaySalesMinor / todayOrderCount) : 0;
 
-    // 2. Past 2-day orders and payment breakdown (excluding unpaid online checkouts)
+    // 2. Past 2-day orders
     const past2DaysOrders = await prisma.order.findMany({
       where: {
         createdAt: { gte: twoDaysAgo },
-        ...activeOrderCondition,
       },
       include: { payment: true },
-    });
-
-    let twoDaysSuccessPayments = 0;
-    let twoDaysPendingPayments = 0;
-    let twoDaysFailedPayments = 0;
-    let twoDaysCodSalesMinor = 0;
-    let twoDaysOnlineSalesMinor = 0;
-    let twoDaysCodOrderCount = 0;
-    let twoDaysOnlineOrderCount = 0;
-
-    past2DaysOrders.forEach((o) => {
-      const pStatus = o.payment?.status;
-      const isCod = o.payment?.method === "COD";
-
-      if (o.status !== "CANCELLED") {
-        if (isCod) {
-          twoDaysCodSalesMinor += o.totalMinor;
-          twoDaysCodOrderCount++;
-        } else if (pStatus === "COMPLETED") {
-          twoDaysOnlineSalesMinor += o.totalMinor;
-          twoDaysOnlineOrderCount++;
-        }
-      }
-
-      if (pStatus === "COMPLETED") twoDaysSuccessPayments++;
-      else if (pStatus === "FAILED") twoDaysFailedPayments++;
-      else twoDaysPendingPayments++;
     });
 
     // 3. Status Breakdown for the past 2 days
@@ -94,7 +58,6 @@ export async function GET(req: NextRequest) {
       by: ["status"],
       where: {
         createdAt: { gte: twoDaysAgo },
-        ...activeOrderCondition,
       },
       _count: { id: true },
     });
@@ -118,7 +81,6 @@ export async function GET(req: NextRequest) {
         status: { in: ["CONFIRMED", "PREPARING"] },
         deliveryAssignment: null,
         createdAt: { gte: twoDaysAgo },
-        ...activeOrderCondition,
       },
       include: { user: { select: { name: true, mobile: true } } },
       take: 5,
@@ -137,7 +99,6 @@ export async function GET(req: NextRequest) {
         status: { in: ["PLACED", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"] },
         placedAt: { lte: fifteenMinutesAgo },
         createdAt: { gte: twoDaysAgo },
-        ...activeOrderCondition,
       },
       select: { id: true, orderNumber: true, status: true, placedAt: true, totalMinor: true },
       take: 5,
@@ -147,7 +108,6 @@ export async function GET(req: NextRequest) {
     const recentOrders = await prisma.order.findMany({
       where: {
         createdAt: { gte: twoDaysAgo },
-        ...activeOrderCondition,
       },
       take: 10,
       orderBy: { createdAt: "desc" },
@@ -161,7 +121,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Persisted collection breakdown from DeliveryCollection
+    // 5. Persisted doorstep collection metrics from DeliveryCollection
     const collections = await prisma.deliveryCollection.findMany({
       select: {
         amountMinor: true,
@@ -175,12 +135,21 @@ export async function GET(req: NextRequest) {
     let collectionsRequiringReconciliation = 0;
 
     collections.forEach((c) => {
-      if (c.collectionMethod === "CASH") {
+      const method = c.collectionMethod?.toUpperCase?.() || "";
+      if (method === "CASH") {
         cashCollectedMinor += c.amountMinor;
-      } else if (c.collectionMethod === "UPI_MANUAL_VERIFIED" || c.collectionMethod === "ONLINE_DOORSTEP") {
+      } else if (
+        method === "UPI" ||
+        method === "UPI_MANUAL" ||
+        method === "UPI_MANUAL_VERIFIED" ||
+        method === "ONLINE_DOORSTEP"
+      ) {
         upiManualConfirmedMinor += c.amountMinor;
       }
-      if (c.verificationStatus === "COLLECTED_PENDING_RECONCILIATION" || c.verificationStatus === "PENDING_RECONCILIATION") {
+      if (
+        c.verificationStatus === "COLLECTED_PENDING_RECONCILIATION" ||
+        c.verificationStatus === "PENDING_RECONCILIATION"
+      ) {
         collectionsRequiringReconciliation++;
       }
     });
@@ -197,7 +166,11 @@ export async function GET(req: NextRequest) {
     });
     const outstandingCollectionMinor = pendingCodOrders.reduce((sum, o) => sum + o.totalMinor, 0);
 
-    const pendingDeliveries = (statusMap.PLACED || 0) + (statusMap.CONFIRMED || 0) + (statusMap.PREPARING || 0) + (statusMap.OUT_FOR_DELIVERY || 0);
+    const pendingDeliveries =
+      (statusMap.PLACED || 0) +
+      (statusMap.CONFIRMED || 0) +
+      (statusMap.PREPARING || 0) +
+      (statusMap.OUT_FOR_DELIVERY || 0);
     const deliveredOrders = statusMap.DELIVERED || 0;
     const failedDeliveries = statusMap.CANCELLED || 0;
 
@@ -221,13 +194,6 @@ export async function GET(req: NextRequest) {
         outstandingCollectionMinor,
         collectionsRequiringReconciliation,
         past2DaysTotal: past2DaysOrders.length,
-        twoDaysSuccessPayments,
-        twoDaysPendingPayments,
-        twoDaysFailedPayments,
-        twoDaysCodSalesMinor,
-        twoDaysOnlineSalesMinor,
-        twoDaysCodOrderCount,
-        twoDaysOnlineOrderCount,
       },
       alerts: {
         unassignedOrders,

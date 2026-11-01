@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendWhatsAppDeliveryStatus } from "@/lib/whatsapp";
+import { publishEvent } from "@/lib/events";
 
 /**
  * POST /api/delivery/assignments/[id]/deliver
- * Marks an order as delivered, records physical or online collection, and triggers customer delivery notification.
+ * Marks an order as delivered, records physical Cash or manually confirmed UPI collection,
+ * and triggers customer delivery notification.
  */
 export async function POST(
   req: NextRequest,
@@ -13,7 +15,7 @@ export async function POST(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" )) {
+    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN")) {
       return NextResponse.json({ error: "Forbidden: Delivery agent only" }, { status: 403 });
     }
 
@@ -23,7 +25,7 @@ export async function POST(
     try {
       body = await req.json();
     } catch {
-      // Body is optional if default cash / prepaid is used
+      // Body is optional
     }
 
     const assignment = await prisma.deliveryAssignment.findFirst({
@@ -57,10 +59,8 @@ export async function POST(
       );
     }
 
-    const isOriginallyCod =
-      assignment.order.payment?.method === "COD" || assignment.order.codFeeMinor > 0;
+    const requestedMethod = body.collectionMethod || "CASH";
 
-    let requestedMethod = body.collectionMethod || (isOriginallyCod ? "CASH" : "CASH");
     if (requestedMethod === "ONLINE_DOORSTEP") {
       if (assignment.order.payment?.status !== "COMPLETED") {
         return NextResponse.json(
@@ -69,9 +69,19 @@ export async function POST(
         );
       }
     }
-    if (requestedMethod === "ONLINE_DOORSTEP" || requestedMethod === "UPI") {
-      requestedMethod = "UPI_MANUAL_VERIFIED";
-    }
+
+    const isUpiManual =
+      requestedMethod === "UPI_MANUAL" ||
+      requestedMethod === "UPI_MANUAL_VERIFIED" ||
+      requestedMethod === "ONLINE_DOORSTEP" ||
+      requestedMethod === "UPI";
+
+    const normalizedCollectionMethod = isUpiManual ? "UPI_MANUAL" : "CASH";
+    const defaultNotes = isUpiManual
+      ? "UPI — Manually Confirmed by Delivery Agent"
+      : "Cash Collected at Doorstep";
+    const notes = (body.notes && typeof body.notes === "string" ? body.notes.trim() : "") || defaultNotes;
+    const verificationStatus = isUpiManual ? "MANUAL_AGENT_CONFIRMED" : "VERIFIED";
 
     const now = new Date();
 
@@ -95,45 +105,40 @@ export async function POST(
       });
 
       // 3. Mark payment completed with authoritative collection method
-      const isUpiManual = requestedMethod === "UPI_MANUAL_VERIFIED";
       await tx.payment.upsert({
         where: { orderId: assignment.orderId },
         update: {
           status: "COMPLETED",
           method: isUpiManual ? "UPI" : "COD",
-          provider: isUpiManual ? "UPI_MANUAL_VERIFIED" : "CASH",
+          provider: isUpiManual ? "UPI_MANUAL" : "CASH_ON_DELIVERY",
         },
         create: {
           orderId: assignment.orderId,
           amountMinor: assignment.order.totalMinor,
           status: "COMPLETED",
           method: isUpiManual ? "UPI" : "COD",
-          provider: isUpiManual ? "UPI_MANUAL_VERIFIED" : "CASH",
+          provider: isUpiManual ? "UPI_MANUAL" : "CASH_ON_DELIVERY",
         },
       });
 
       // 4. Create or update DeliveryCollection record (idempotent, strictly one per order)
-      const verificationStatus = isUpiManual
-        ? "MANUAL_AGENT_CONFIRMED"
-        : "COLLECTED_PENDING_RECONCILIATION";
-
       const collectionRecord = await tx.deliveryCollection.upsert({
         where: { orderId: assignment.orderId },
         update: {
-          collectionMethod: requestedMethod,
+          collectionMethod: normalizedCollectionMethod,
           amountMinor: assignment.order.totalMinor,
           verificationStatus,
           collectedAt: now,
-          notes: body.notes || (isUpiManual ? "Doorstep UPI manual agent confirmation" : "Doorstep cash collected"),
+          notes,
         },
         create: {
           orderId: assignment.orderId,
           agentUserId: assignment.agentUserId,
-          collectionMethod: requestedMethod,
+          collectionMethod: normalizedCollectionMethod,
           amountMinor: assignment.order.totalMinor,
           verificationStatus,
           collectedAt: now,
-          notes: body.notes || (isUpiManual ? "Doorstep UPI manual agent confirmation" : "Doorstep cash collected"),
+          notes,
         },
       });
 
@@ -154,10 +159,10 @@ export async function POST(
             assignmentId: assignment.id,
             deliveredAt: now,
             agentUserId: assignment.agentUserId,
-            originalPaymentMethod: assignment.order.payment?.method || "COD",
-            actualCollectionMethod: requestedMethod,
+            actualCollectionMethod: normalizedCollectionMethod,
             amountMinor: assignment.order.totalMinor,
             verificationStatus,
+            notes,
           }),
         },
       });
@@ -165,7 +170,25 @@ export async function POST(
       return { assignment: a, order: ord, collection: collectionRecord };
     });
 
-    // 7. Dispatch WhatsApp Delivered Notification
+    // 7. Publish real-time events
+    try {
+      publishEvent("admin", "DELIVERY_COMPLETED", {
+        orderId: assignment.orderId,
+        orderNumber: assignment.order.orderNumber,
+        collectionMethod: normalizedCollectionMethod,
+        agentId: assignment.agentUserId,
+        deliveredAt: now.toISOString(),
+      });
+      publishEvent(`order:${assignment.orderId}`, "DELIVERY_COMPLETED", {
+        orderId: assignment.orderId,
+        status: "DELIVERED",
+        deliveredAt: now.toISOString(),
+      });
+    } catch (e) {
+      console.warn("Event publish skipped:", e);
+    }
+
+    // 8. Dispatch WhatsApp Delivered Notification
     if (assignment.order.user?.mobile) {
       try {
         await sendWhatsAppDeliveryStatus(

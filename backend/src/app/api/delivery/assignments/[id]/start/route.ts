@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notificationProvider } from "@/lib/adapters/NotificationProvider";
+import { publishEvent } from "@/lib/events";
 
 export async function POST(
   req: NextRequest,
@@ -9,7 +10,7 @@ export async function POST(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" )) {
+    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN")) {
       return NextResponse.json({ error: "Forbidden: Delivery agent only" }, { status: 403 });
     }
 
@@ -68,6 +69,20 @@ export async function POST(
 
       return a;
     });
+
+    try {
+      publishEvent("admin", "DELIVERY_STARTED", {
+        orderId: assignment.orderId,
+        orderNumber: assignment.order.orderNumber,
+        agentId: session.id,
+      });
+      publishEvent(`order:${assignment.orderId}`, "DELIVERY_STARTED", {
+        orderId: assignment.orderId,
+        status: "OUT_FOR_DELIVERY",
+      });
+    } catch (e) {
+      console.warn("Event publish skipped:", e);
+    }
 
     await notificationProvider.sendTransactional({
       userId: assignment.order.userId,

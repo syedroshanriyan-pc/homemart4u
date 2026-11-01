@@ -9,7 +9,7 @@ const payEngine = new Homemart4uPayEngine();
 
 /**
  * POST /api/delivery/orders/[id]/collect-online
- * Doorstep dynamic QR generation for delivery agents collecting online payment for COD orders
+ * Doorstep dynamic QR generation for delivery agents collecting payment for COD orders
  */
 export async function POST(
   req: NextRequest,
@@ -17,7 +17,7 @@ export async function POST(
 ) {
   try {
     const session = await getSessionUser(req);
-    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN" )) {
+    if (!session || (session.role !== "DELIVERY_AGENT" && session.role !== "ADMIN")) {
       return NextResponse.json({ error: "Forbidden: Delivery agent only" }, { status: 403 });
     }
 
@@ -154,6 +154,8 @@ export async function POST(
       intentLinks: paySession.intentLinks,
       expiresAt: paySession.expiresAt,
       expiresInSeconds: paySession.expiresInSeconds,
+      vpa: paySession.vpa,
+      payeeName: paySession.payeeName,
       status: "PENDING",
     });
   } catch (error: any) {

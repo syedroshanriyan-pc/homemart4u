@@ -18,8 +18,11 @@ import {
   ArrowRight,
   RefreshCw,
   Banknote,
+  QrCode,
+  ShieldCheck,
   CreditCard,
 } from "lucide-react";
+import { useRealTime } from "@/lib/useRealTime";
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -53,10 +56,15 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Real-time SSE listener backed by /api/events with auto-reconnect & 60s bounded fallback
+  useRealTime({
+    channels: ["admin"],
+    onRefresh: fetchDashboardData,
+    fallbackIntervalMs: 60000,
+  });
+
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 15000); // 15s refresh
-    return () => clearInterval(interval);
   }, []);
 
   if (loading && !data) {
@@ -90,14 +98,20 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header with Refresh */}
+      {/* Header with Real-Time Indicator & Refresh */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-2xl font-bold text-charcoal-800">
-            Operations Overview
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-serif text-2xl font-bold text-charcoal-800">
+              Operations Overview
+            </h1>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+              Live SSE Active
+            </span>
+          </div>
           <p className="text-xs text-charcoal-500 mt-0.5">
-            Real-time sales, order lifecycle statuses, and cash vs online payment reconciliation.
+            Real-time sales, order lifecycle, and persisted doorstep cash vs UPI collections.
           </p>
         </div>
 
@@ -110,12 +124,12 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
-      {/* 1. Core KPI Metric Cards (With Dedicated COD vs Online Boxes) */}
+      {/* 1. Core KPI Metric Cards (Strictly Persisted Delivery Collections & Live Metrics) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
         {/* Total Today Sales */}
         <div className="bg-cream-50 p-4 sm:p-5 rounded-2xl border border-cream-200 shadow-subtle space-y-2">
           <div className="flex items-center justify-between text-charcoal-400">
-            <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Total Sales</span>
+            <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Today Sales</span>
             <DollarSign className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="flex items-baseline gap-1">
@@ -123,10 +137,12 @@ export default function AdminDashboardPage() {
               ₹{((metrics.todaySalesMinor || 0) / 100).toFixed(0)}
             </span>
           </div>
-          <span className="text-[10px] text-charcoal-400 block truncate">Total today active</span>
+          <span className="text-[10px] text-charcoal-400 block truncate">
+            {metrics.todayOrderCount || 0} orders today
+          </span>
         </div>
 
-        {/* Cash on Delivery (COD) Amount Box */}
+        {/* COD Cash Amount Box */}
         <div className="bg-amber-50/70 p-4 sm:p-5 rounded-2xl border border-amber-200 shadow-subtle space-y-2">
           <div className="flex items-center justify-between text-amber-700">
             <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">COD Cash Amount</span>
@@ -134,7 +150,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-baseline gap-1">
             <span className="font-serif text-xl sm:text-2xl font-bold text-amber-900">
-              ₹{((metrics.todayCodSalesMinor || 0) / 100).toFixed(0)}
+              ₹{((metrics.todayCodSalesMinor || metrics.cashCollectedMinor || 0) / 100).toFixed(0)}
             </span>
           </div>
           <span className="text-[10px] text-amber-700 block truncate font-medium">
@@ -142,7 +158,7 @@ export default function AdminDashboardPage() {
           </span>
         </div>
 
-        {/* Online Paid Amount Box */}
+        {/* Online Paid Amount Box / Doorstep UPI */}
         <div className="bg-emerald-50/70 p-4 sm:p-5 rounded-2xl border border-emerald-200 shadow-subtle space-y-2">
           <div className="flex items-center justify-between text-emerald-700">
             <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Online Paid Amount</span>
@@ -150,54 +166,61 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-baseline gap-1">
             <span className="font-serif text-xl sm:text-2xl font-bold text-emerald-900">
-              ₹{((metrics.todayOnlineSalesMinor || 0) / 100).toFixed(0)}
+              ₹{((metrics.todayOnlineSalesMinor || metrics.upiManualConfirmedMinor || 0) / 100).toFixed(0)}
             </span>
           </div>
           <span className="text-[10px] text-emerald-700 block truncate font-medium">
-            {metrics.todayOnlineOrderCount || 0} UPI / Bank verified
+            {metrics.todayOnlineOrderCount || 0} UPI manually verified
           </span>
         </div>
 
-        {/* Today's Orders */}
+        {/* Total Doorstep Collections */}
         <div className="bg-cream-50 p-4 sm:p-5 rounded-2xl border border-cream-200 shadow-subtle space-y-2">
           <div className="flex items-center justify-between text-charcoal-400">
-            <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Orders Today</span>
-            <ShoppingBag className="w-4 h-4 text-amberGold-600" />
+            <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Total Collected</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="flex items-baseline gap-1">
             <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-800">
-              {metrics.todayOrderCount || 0}
+              ₹{((metrics.totalCollectionsMinor || 0) / 100).toFixed(0)}
             </span>
           </div>
-          <span className="text-[10px] text-charcoal-400 block truncate">Total orders placed</span>
+          <span className="text-[10px] text-charcoal-400 block truncate">
+            Cash + UPI confirmed
+          </span>
         </div>
 
-        {/* Average Order Value (AOV) */}
+        {/* Outstanding Uncollected COD */}
         <div className="bg-cream-50 p-4 sm:p-5 rounded-2xl border border-cream-200 shadow-subtle space-y-2">
           <div className="flex items-center justify-between text-charcoal-400">
-            <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Average Order</span>
-            <TrendingUp className="w-4 h-4 text-blue-600" />
+            <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Outstanding COD</span>
+            <Clock className="w-4 h-4 text-amberGold-600" />
           </div>
           <div className="flex items-baseline gap-1">
             <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-800">
-              ₹{((metrics.aovMinor || 0) / 100).toFixed(0)}
+              ₹{((metrics.outstandingCollectionMinor || 0) / 100).toFixed(0)}
             </span>
           </div>
-          <span className="text-[10px] text-charcoal-400 block truncate">Avg ticket size</span>
+          <span className="text-[10px] text-charcoal-400 block truncate">Pending handover</span>
         </div>
 
-        {/* Target 20-min Delivery */}
+        {/* Delivery Progress */}
         <div className="bg-cream-50 p-4 sm:p-5 rounded-2xl border border-cream-200 shadow-subtle space-y-2">
           <div className="flex items-center justify-between text-charcoal-400">
-            <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Target Window</span>
-            <Clock className="w-4 h-4 text-purple-600" />
+            <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Deliveries</span>
+            <Bike className="w-4 h-4 text-blue-600" />
           </div>
           <div className="flex items-baseline gap-1">
             <span className="font-serif text-xl sm:text-2xl font-bold text-charcoal-800">
-              ~20 Min
+              {metrics.deliveredOrders || 0}
+            </span>
+            <span className="text-xs text-charcoal-500 font-mono">
+              / {metrics.pendingDeliveries || 0} active
             </span>
           </div>
-          <span className="text-[10px] text-charcoal-400 block truncate">Mulbagal standard</span>
+          <span className="text-[10px] text-charcoal-400 block truncate">
+            {metrics.deliveredOrders || 0} delivered
+          </span>
         </div>
       </div>
 

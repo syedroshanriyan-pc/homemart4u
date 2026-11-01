@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { useRealTime } from "@/lib/useRealTime";
 import {
   Search,
   ShoppingBag,

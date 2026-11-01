@@ -34,6 +34,9 @@ export default function AdminSettingsPage() {
         (data.settings || []).forEach((s: { key: string; value: string }) => {
           map[s.key] = s.value;
         });
+        if (map["SHOP_NAME"] && !map["shop_name"]) {
+          map["shop_name"] = map["SHOP_NAME"];
+        }
         setSettings((prev) => ({ ...prev, ...map }));
       }
     } catch (err) {

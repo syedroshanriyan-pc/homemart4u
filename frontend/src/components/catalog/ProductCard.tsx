@@ -186,6 +186,21 @@ export const ProductCard: React.FC<{
   return (
     <>
       <div className="group relative flex flex-col bg-cream-50 rounded-2xl border border-cream-200 overflow-hidden hover:border-cream-300 hover:shadow-card transition-all duration-300">
+        {/* Favorite Button (Positioned over image outside Link) */}
+        {user && (
+          <button
+            type="button"
+            onClick={toggleFavorite}
+            className={`absolute top-3 right-3 z-20 p-2 rounded-xl backdrop-blur-md transition-all ${
+              isFavorite
+                ? "bg-red-50 text-red-600 shadow-sm"
+                : "bg-charcoal-700/30 text-cream-50 hover:bg-charcoal-700/50"
+            }`}
+            aria-label="Add to favorites"
+          >
+            <Heart className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`} />
+          </button>
+        )}
         {/* Product Image & Badges */}
         <Link href={`/product/${product.slug}`} className="relative aspect-[4/3] w-full overflow-hidden bg-cream-100 block">
           {product.imageUrl ? (
@@ -227,20 +242,7 @@ export const ProductCard: React.FC<{
             )}
           </div>
 
-          {/* Favorite Button */}
-          {user && (
-            <button
-              onClick={toggleFavorite}
-              className={`absolute top-3 right-3 p-2 rounded-xl backdrop-blur-md transition-all ${
-                isFavorite
-                  ? "bg-red-50 text-red-600 shadow-sm"
-                  : "bg-charcoal-700/30 text-cream-50 hover:bg-charcoal-700/50"
-              }`}
-              aria-label="Add to favorites"
-            >
-              <Heart className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`} />
-            </button>
-          )}
+          
 
           {/* Category Pill */}
           {product.category && (

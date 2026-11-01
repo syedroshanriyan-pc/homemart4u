@@ -128,16 +128,7 @@ When you place an order on homemart4u:
                     <ArrowRight className="w-4 h-4 ml-1.5" />
                   </Button>
                 ) : (
-                  <Link href="/menu">
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-xl shadow-rose-600/30 hover:scale-[1.02] active:scale-[0.98] transition-transform"
-                    >
-                      <span>Shop Chicken &amp; Eggs</span>
-                      <ArrowRight className="w-4 h-4 ml-1.5" />
-                    </Button>
-                  </Link>
+                  <Link href="/menu" className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-xl shadow-rose-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all"><span>Shop Chicken &amp; Eggs</span><ArrowRight className="w-4 h-4" /></Link>
                 )}
 
                 <Link
@@ -428,16 +419,7 @@ When you place an order on homemart4u:
                 <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
             ) : (
-              <Link href="/menu" className="w-full sm:w-auto">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-xl shadow-rose-600/40 hover:scale-[1.02] active:scale-[0.98] transition-transform"
-                >
-                  <span>Shop Chicken &amp; Eggs</span>
-                  <ArrowRight className="w-4 h-4 ml-1.5" />
-                </Button>
-              </Link>
+              <Link href="/menu" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-xl shadow-rose-600/40 hover:scale-[1.02] active:scale-[0.98] transition-all"><span>Shop Chicken &amp; Eggs</span><ArrowRight className="w-4 h-4" /></Link>
             )}
 
             <Link

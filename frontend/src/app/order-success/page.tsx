@@ -18,7 +18,7 @@ import {
   Calendar,
   CheckCircle2,
 } from "lucide-react";
-
+import { Button } from "@/components/ui/Button";
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
@@ -101,25 +101,10 @@ function OrderSuccessContent() {
   }, [orderId]);
 
   const handleCopyOrderNumber = (num: string) => {
-    if (!num) return;
-    try {
-      if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(num);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = num;
-        textArea.style.position = "fixed";
-        textArea.style.opacity = "0";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-      }
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(num);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Ignore copy error
     }
   };
 
@@ -157,21 +142,19 @@ function OrderSuccessContent() {
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-sm transition active:scale-[0.98] cursor-pointer"
+            className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs transition shadow-sm cursor-pointer text-center"
           >
             Try Again
           </button>
           <Link
             href="/cart"
-            onClick={() => router.push("/cart")}
-            className="w-full py-2.5 px-4 bg-white hover:bg-stone-50 text-stone-700 border-2 border-stone-300 rounded-xl font-bold text-sm shadow-xs transition active:scale-[0.98] cursor-pointer text-center"
+            className="w-full py-2.5 px-4 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 font-bold text-xs transition text-center inline-block"
           >
             Back to Cart
           </Link>
           <Link
             href="/contact"
-            onClick={() => router.push("/contact")}
-            className="w-full py-2 px-4 text-stone-600 hover:text-stone-900 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2.5 px-4 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 font-medium text-xs transition flex items-center justify-center gap-2"
           >
             <PhoneCall className="w-4 h-4" />
             <span>Contact Support</span>
@@ -183,12 +166,8 @@ function OrderSuccessContent() {
 
   let parsedAddress: any = null;
   try {
-    parsedAddress = order.deliveryAddress || (order.deliveryAddressSnapshot ? JSON.parse(order.deliveryAddressSnapshot) : null);
-  } catch {
-    parsedAddress = order.deliveryAddress || null;
-  }
-
-  const targetOrderId = order?.id || orderId || order?.orderNumber;
+    parsedAddress = order.deliveryAddressSnapshot ? JSON.parse(order.deliveryAddressSnapshot) : null;
+  } catch {}
 
   const totalRupees = (order.totalMinor / 100).toFixed(2);
   const subtotalRupees = (order.subtotalMinor / 100).toFixed(2);
@@ -302,69 +281,6 @@ function OrderSuccessContent() {
           <div>
             <span className="text-[10px] uppercase font-bold text-stone-400 block tracking-wider">Payment Status</span>
             <span className="font-semibold text-amber-700">Pending collection</span>
-          </div>
-        </div>
-
-        {/* Four-Stage Order Progress Tracker */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
-              Order Progress
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
-              {order.status === "DELIVERED"
-                ? "Delivered"
-                : order.status === "OUT_FOR_DELIVERY"
-                ? "Out for Delivery"
-                : order.status === "CONFIRMED" || order.status === "PREPARING"
-                ? "Confirmed & Preparing"
-                : "Order Placed"}
-            </span>
-          </div>
-
-          {/* Horizontal Progress Bar with Steps */}
-          <div className="grid grid-cols-4 gap-2 relative">
-            {[
-              {
-                label: "Order Placed",
-                completed: true,
-                step: 1,
-              },
-              {
-                label: "Order Confirmed",
-                completed: ["CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED"].includes(order.status),
-                step: 2,
-              },
-              {
-                label: "Out for Delivery",
-                completed: ["OUT_FOR_DELIVERY", "DELIVERED"].includes(order.status),
-                step: 3,
-              },
-              {
-                label: "Delivered",
-                completed: order.status === "DELIVERED",
-                step: 4,
-              },
-            ].map((s) => (
-              <div key={s.step} className="flex flex-col items-center text-center space-y-1.5">
-                <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                    s.completed
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "bg-stone-100 text-stone-400 border border-stone-200"
-                  }`}
-                >
-                  {s.completed ? <Check className="w-4 h-4 stroke-[3]" /> : s.step}
-                </div>
-                <span
-                  className={`text-[10px] sm:text-xs leading-tight ${
-                    s.completed ? "font-bold text-stone-900" : "text-stone-400 font-medium"
-                  }`}
-                >
-                  {s.label}
-                </span>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -545,24 +461,24 @@ function OrderSuccessContent() {
           {/* Stage 5: Primary Action Buttons */}
           <div className="p-5 sm:p-6 bg-stone-50 border-t border-stone-200 flex flex-col sm:flex-row gap-3 justify-end animate-stage-5">
             <Link
-              href="/"
-              onClick={() => {
-                router.push("/");
-              }}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-white hover:bg-stone-100 text-stone-700 border-2 border-stone-300 shadow-xs transition active:scale-[0.98] cursor-pointer text-center"
+              href="/menu"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-stone-300 bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 text-xs font-bold transition shadow-2xs hover:shadow-sm text-center"
             >
               <ShoppingBag className="w-4 h-4 text-stone-600" />
               <span>Continue Shopping</span>
             </Link>
-
             <Link
-              href={targetOrderId ? `/account/orders/${targetOrderId}` : "/account/orders"}
+              href={order?.id ? `/account/orders/${order.id}` : "/account/orders"}
               onClick={() => {
-                router.push(targetOrderId ? `/account/orders/${targetOrderId}` : "/account/orders");
+                if (typeof window !== "undefined" && order) {
+                  try {
+                    sessionStorage.setItem("fc_latest_order", JSON.stringify(order));
+                  } catch {}
+                }
               }}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition active:scale-[0.98] cursor-pointer text-center"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20 text-center"
             >
-              <Truck className="w-4 h-4 text-white" />
+              <Truck className="w-4 h-4" />
               <span>Track My Order &bull; Track Status</span>
             </Link>
           </div>

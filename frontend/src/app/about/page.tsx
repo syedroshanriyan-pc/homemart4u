@@ -100,12 +100,7 @@ export default function AboutPage() {
       </div>
 
       <div className="text-center pt-4">
-        <Link href="/menu">
-          <Button variant="primary" size="lg">
-            <span>Explore Today&apos;s Cuts</span>
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </Link>
+        <Link href="/menu" className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-charcoal-900 font-bold text-sm shadow-md transition"><span>Explore Today's Cuts</span><ArrowRight className="w-4 h-4" /></Link>
       </div>
     </div>
   );

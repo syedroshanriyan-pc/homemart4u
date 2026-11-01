@@ -89,11 +89,7 @@ export default function OrderHistoryPage() {
             Track active deliveries and review previous fresh purchases.
           </p>
         </div>
-        <Link href="/menu">
-          <Button variant="outline" size="sm">
-            Browse Menu
-          </Button>
-        </Link>
+        <Link href="/menu" className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl border border-cream-300 bg-white hover:bg-cream-100 text-charcoal-700 font-semibold text-xs transition">Browse Menu</Link>
       </div>
 
       {orders.length === 0 ? (
@@ -108,11 +104,7 @@ export default function OrderHistoryPage() {
             You haven&apos;t placed any fresh meat orders yet. Order now to experience tender artisanal cuts delivered in ~20 minutes.
           </p>
           <div className="pt-2">
-            <Link href="/menu">
-              <Button variant="primary" size="md">
-                Order Fresh Chicken
-              </Button>
-            </Link>
+            <Link href="/menu" className="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-charcoal-900 font-bold text-xs shadow-sm transition">Order Fresh Chicken</Link>
           </div>
         </div>
       ) : (
@@ -182,12 +174,7 @@ export default function OrderHistoryPage() {
                       <span>Reorder at Current Rate</span>
                     </Button>
 
-                    <Link href={`/account/orders/${order.id}`}>
-                      <Button variant="primary" size="sm" className="text-xs">
-                        <span>Track / Details</span>
-                        <ArrowRight className="w-3 h-3 ml-1" />
-                      </Button>
-                    </Link>
+                    <Link href={`/account/orders/${order.id}`} className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-charcoal-900 font-bold text-xs shadow-sm transition"><span>Track / Details</span><ArrowRight className="w-3 h-3 ml-1" /></Link>
                   </div>
                 </div>
               </div>

@@ -269,23 +269,21 @@ export const Navbar: React.FC = () => {
                       </Link>
 
                       {(user.role === "ADMIN") && (
-                        <Link
+                        <a
                           href="/admin"
-                          onClick={() => setIsUserMenuOpen(false)}
                           className="block px-4 py-2 text-xs font-bold text-amberGold-700 bg-amberGold-50 hover:bg-amberGold-100 border-t border-stone-100 transition-colors"
                         >
                           ⚙️ Admin Dashboard
-                        </Link>
+                        </a>
                       )}
 
                       {user.role === "DELIVERY_AGENT" && (
-                        <Link
+                        <a
                           href="/delivery"
-                          onClick={() => setIsUserMenuOpen(false)}
                           className="block px-4 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-t border-stone-100 transition-colors"
                         >
                           🛵 Delivery Portal
-                        </Link>
+                        </a>
                       )}
 
                       <div className="border-t border-stone-100 pt-1 mt-1">
@@ -494,17 +492,16 @@ export const Navbar: React.FC = () => {
 
                 <div className="space-y-0.5">
                   {(user.role === "ADMIN") && (
-                    <Link
+                    <a
                       href="/admin"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center justify-between px-3 py-2 text-xs font-bold text-amberGold-900 bg-amberGold-100 hover:bg-amberGold-200 border border-amberGold-300 rounded-xl transition my-1"
+                      className="flex items-center justify-between px-3 py-2 text-xs font-bold text-amberGold-900 bg-amberGold-100 hover:bg-amberGold-200 active:bg-amberGold-300 border border-amberGold-300 rounded-xl transition my-1 cursor-pointer"
                     >
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-amberGold-700 flex-shrink-0" />
                         <span>Admin Operations Portal</span>
                       </div>
                       <span className="text-[10px] text-amberGold-800 font-mono">&rarr;</span>
-                    </Link>
+                    </a>
                   )}
 
                   <Link
@@ -549,14 +546,13 @@ export const Navbar: React.FC = () => {
                   </Link>
 
                   {user.role === "DELIVERY_AGENT" && (
-                    <Link
+                    <a
                       href="/delivery"
-                      onClick={() => setIsMobileMenuOpen(false)}
                       className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-bold text-forest-700 bg-forest-50 hover:bg-forest-100 rounded-xl transition"
                     >
                       <Bike className="w-3.5 h-3.5 text-forest-600 flex-shrink-0" />
                       <span>Delivery Partner Portal</span>
-                    </Link>
+                    </a>
                   )}
                 </div>
 

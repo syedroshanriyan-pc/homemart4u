@@ -488,11 +488,7 @@ export default function AdminOrdersListPage() {
 
                       {/* Actions */}
                       <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <Link href={`/admin/orders/${ord.id}`}>
-                          <Button variant="primary" size="sm" className="text-xs px-3 py-1">
-                            <span>Manage</span>
-                          </Button>
-                        </Link>
+                        <Link href={`/admin/orders/${ord.id}`} className="inline-flex items-center justify-center px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-charcoal-900 font-bold text-xs shadow-sm transition"><span>Manage</span></Link>
                       </td>
                     </tr>
                   );

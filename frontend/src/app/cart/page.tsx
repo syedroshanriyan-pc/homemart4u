@@ -58,12 +58,7 @@ export default function CartPage() {
           Explore our daily farm-fresh cuts, chicken 65, farm eggs, and chilled beverages delivered fresh in Mulbagal.
         </p>
         <div className="pt-2">
-          <Link href="/menu">
-            <Button variant="primary" size="lg">
-              <span>Browse Fresh Menu</span>
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </Link>
+          <Link href="/menu" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-charcoal-900 font-bold text-sm shadow-sm transition"><span>Browse Fresh Menu</span><ArrowRight className="w-4 h-4" /></Link>
         </div>
       </div>
     );
@@ -117,11 +112,7 @@ export default function CartPage() {
                 </div>
               </div>
               <div className="pt-1 flex items-center gap-3">
-                <Link href="/menu">
-                  <Button variant="secondary" size="sm" className="text-xs">
-                    Add More Meat Cuts &rarr;
-                  </Button>
-                </Link>
+                <Link href="/menu" className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-900 font-semibold text-xs transition">Add More Meat Cuts &rarr;</Link>
               </div>
             </div>
           )}
@@ -351,17 +342,24 @@ export default function CartPage() {
 
             {/* Checkout CTA */}
             <div className="pt-2">
-              <Link href="/checkout">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  disabled={Boolean(!isMinMeatMet || (validation && !validation.isValid))}
-                  className="w-full"
+              {(!isMinMeatMet || (validation && !validation.isValid)) ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-charcoal-300 text-charcoal-500 font-bold text-sm cursor-not-allowed"
                 >
                   <span>Proceed to Checkout</span>
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <Link
+                  href="/checkout"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-charcoal-900 font-bold text-sm shadow-md transition"
+                >
+                  <span>Proceed to Checkout</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           </div>
         </div>

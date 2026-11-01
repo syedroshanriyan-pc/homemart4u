@@ -42,11 +42,7 @@ export default function FavoritesPage() {
             Your saved items for quick one-click reordering.
           </p>
         </div>
-        <Link href="/menu">
-          <Button variant="outline" size="sm">
-            Browse Full Menu
-          </Button>
-        </Link>
+        <Link href="/menu" className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl border border-cream-300 bg-white hover:bg-cream-100 text-charcoal-700 font-semibold text-xs transition">Browse Full Menu</Link>
       </div>
 
       {favorites.length === 0 ? (
@@ -59,11 +55,7 @@ export default function FavoritesPage() {
             Tap the heart icon on any product in our menu to save it here for fast reordering.
           </p>
           <div className="pt-2">
-            <Link href="/menu">
-              <Button variant="primary" size="md">
-                Explore Menu
-              </Button>
-            </Link>
+            <Link href="/menu" className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-charcoal-900 font-bold text-xs shadow-sm transition">Explore Menu</Link>
           </div>
         </div>
       ) : (

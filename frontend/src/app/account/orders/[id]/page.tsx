@@ -197,21 +197,17 @@ export default function OrderTrackingPage() {
           Order Not Found
         </h2>
         <p className="text-xs text-charcoal-500">{errorMsg || "Unable to access this order."}</p>
-        <Link href="/account/orders">
-          <Button variant="outline" size="sm">
-            Back to Orders
-          </Button>
-        </Link>
+        <Link href="/account/orders" className="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-cream-300 bg-white hover:bg-cream-100 text-charcoal-700 font-bold text-xs transition shadow-2xs">Back to Orders</Link>
       </div>
     );
   }
 
   // 5 exact status lifecycle stages
   const stages = [
-    { key: "PLACED", label: "Order Placed", time: order.placedAt },
+    { key: "PLACED", label: "Placed", time: order.placedAt },
     { key: "CONFIRMED", label: "Confirmed", time: order.confirmedAt },
-    { key: "PREPARING", label: "Preparing in Kitchen", time: order.preparingAt },
-    { key: "OUT_FOR_DELIVERY", label: "Out for Delivery", time: order.outForDeliveryAt },
+    { key: "PREPARING", label: "Preparing", time: order.preparingAt },
+    { key: "OUT_FOR_DELIVERY", label: "On the way", time: order.outForDeliveryAt },
     { key: "DELIVERED", label: "Delivered", time: order.deliveredAt },
   ];
 

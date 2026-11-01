@@ -87,16 +87,8 @@ export default function CheckoutPage() {
           Please log in with your mobile number or create an account to finalize your order with live delivery tracking.
         </p>
         <div className="pt-2 flex flex-col gap-2">
-          <Link href="/login?redirect=/checkout">
-            <Button variant="primary" size="lg" className="w-full">
-              Login with Mobile
-            </Button>
-          </Link>
-          <Link href="/register?redirect=/checkout">
-            <Button variant="outline" size="lg" className="w-full">
-              New Customer? Register Here
-            </Button>
-          </Link>
+          <Link href="/login?redirect=/checkout" className="w-full inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-charcoal-900 font-bold text-sm shadow-md transition">Login with Mobile</Link>
+          <Link href="/register?redirect=/checkout" className="w-full inline-flex items-center justify-center px-6 py-3.5 rounded-xl border border-cream-300 bg-white hover:bg-cream-100 text-charcoal-800 font-bold text-sm transition">New Customer? Register Here</Link>
         </div>
       </div>
     );
@@ -139,7 +131,6 @@ export default function CheckoutPage() {
         }
         clearCart();
         setUpiOrderData(null);
-        router.push(`/order-success?orderId=${orderIdToSwitch}&method=COD`);
         window.location.href = `/order-success?orderId=${orderIdToSwitch}&method=COD`;
       } else {
         setErrorMessage(switchData.error || "Failed to switch to COD.");

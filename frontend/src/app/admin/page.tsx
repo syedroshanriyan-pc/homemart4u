@@ -268,11 +268,7 @@ export default function AdminDashboardPage() {
                     <span className="font-mono font-bold text-charcoal-800">#{ord.orderNumber}</span>
                     <span className="text-[11px] text-charcoal-400 block">{ord.user?.name}</span>
                   </div>
-                  <Link href={`/admin/orders/${ord.id}`}>
-                    <Button variant="outline" size="sm" className="text-[11px] px-2 py-1">
-                      Assign
-                    </Button>
-                  </Link>
+                  <Link href={`/admin/orders/${ord.id}`} className="inline-flex items-center justify-center px-2 py-1 rounded-xl border border-amberGold-300 bg-amberGold-50 hover:bg-amberGold-100 text-charcoal-800 font-bold text-[11px] transition">Assign</Link>
                 </div>
               ))}
             </div>
@@ -334,11 +330,7 @@ export default function AdminDashboardPage() {
                     <span className="font-semibold text-charcoal-800 truncate block max-w-[140px]">{p.name}</span>
                     <span className="text-[10px] text-charcoal-400">{p.category?.name}</span>
                   </div>
-                  <Link href="/admin/inventory">
-                    <Button variant="outline" size="sm" className="text-[11px] px-2 py-1">
-                      Restock
-                    </Button>
-                  </Link>
+                  <Link href="/admin/inventory" className="inline-flex items-center justify-center px-2 py-1 rounded-xl border border-cream-300 bg-white hover:bg-cream-100 text-charcoal-700 font-semibold text-[11px] transition">Restock</Link>
                 </div>
               ))}
             </div>
@@ -399,11 +391,7 @@ export default function AdminDashboardPage() {
                     )}
                   </td>
                   <td className="py-3 px-2 text-right">
-                    <Link href={`/admin/orders/${ord.id}`}>
-                      <Button variant="outline" size="sm" className="text-xs px-2.5 py-1">
-                        Manage
-                      </Button>
-                    </Link>
+                    <Link href={`/admin/orders/${ord.id}`} className="inline-flex items-center justify-center px-2.5 py-1 rounded-xl border border-cream-300 bg-white hover:bg-cream-100 text-charcoal-700 font-semibold text-xs transition">Manage</Link>
                   </td>
                 </tr>
               ))}

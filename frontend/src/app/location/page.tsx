@@ -64,12 +64,7 @@ export default function LocationPage() {
           </div>
 
           <div className="pt-4 border-t border-cream-200">
-            <Link href="/menu">
-              <Button variant="primary" size="md" className="w-full sm:w-auto">
-                <span>Start Your Order</span>
-                <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>
-            </Link>
+            <Link href="/menu" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-charcoal-900 font-bold text-xs shadow-sm transition"><span>Start Your Order</span><ArrowRight className="w-4 h-4" /></Link>
           </div>
         </div>
 

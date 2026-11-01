@@ -51,11 +51,7 @@ export default function UserReviewsPage() {
             Once an order is delivered, you can rate the freshness, portioning, and delivery speed.
           </p>
           <div className="pt-2">
-            <Link href="/account/orders">
-              <Button variant="outline" size="sm">
-                View Past Orders
-              </Button>
-            </Link>
+            <Link href="/account/orders" className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl border border-cream-300 bg-white hover:bg-cream-100 text-charcoal-700 font-semibold text-xs transition">View Past Orders</Link>
           </div>
         </div>
       ) : (

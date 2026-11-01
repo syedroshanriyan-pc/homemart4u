@@ -167,11 +167,7 @@ export default function AdminOrderDetailPage() {
     return (
       <div className="py-16 text-center space-y-2">
         <p className="text-sm font-semibold text-charcoal-700">Order not found</p>
-        <Link href="/admin/orders">
-          <Button variant="outline" size="sm">
-            Back to Orders
-          </Button>
-        </Link>
+        <Link href="/admin/orders" className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl border border-cream-300 bg-white hover:bg-cream-100 text-charcoal-700 font-semibold text-xs transition">Back to Orders</Link>
       </div>
     );
   }
@@ -181,11 +177,7 @@ export default function AdminOrderDetailPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/admin/orders">
-            <button className="p-2 rounded-xl bg-cream-50 hover:bg-cream-200 border border-cream-200 text-charcoal-600 transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-          </Link>
+          <Link href="/admin/orders" className="p-2 rounded-xl bg-cream-50 hover:bg-cream-200 border border-cream-200 text-charcoal-600 transition-colors inline-flex items-center justify-center"><ArrowLeft className="w-4 h-4" /></Link>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-serif text-2xl font-bold text-charcoal-800">

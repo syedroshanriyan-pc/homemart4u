@@ -105,11 +105,7 @@ export default function AccountPage() {
               </p>
             </div>
           </div>
-          <a href="/admin">
-            <Button variant="accent" size="sm">
-              Open Admin &rarr;
-            </Button>
-          </a>
+          <a href="/admin" className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-charcoal-900 font-bold text-xs shadow-sm transition">Open Admin &rarr;</a>
         </div>
       )}
 
@@ -128,11 +124,7 @@ export default function AccountPage() {
               </p>
             </div>
           </div>
-          <Link href="/delivery">
-            <Button variant="primary" size="sm">
-              Open Portal &rarr;
-            </Button>
-          </Link>
+          <Link href="/delivery" className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs shadow-sm transition">Open Portal &rarr;</Link>
         </div>
       )}
 

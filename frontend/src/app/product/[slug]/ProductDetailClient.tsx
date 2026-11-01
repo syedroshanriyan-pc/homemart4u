@@ -34,6 +34,16 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
     currentProduct.variants[0] || null
   );
 
+  useEffect(() => {
+    if (!currentProduct.variants || currentProduct.variants.length === 0) return;
+    setSelectedVariant((prev) => {
+      if (prev && currentProduct.variants.some((v) => v.id === prev.id)) {
+        return currentProduct.variants.find((v) => v.id === prev.id)!;
+      }
+      return currentProduct.variants[0];
+    });
+  }, [currentProduct.variants]);
+
   useRealTime({
     channels: ["catalog"],
     onRefresh: async () => {
@@ -44,9 +54,9 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
           if (d.product) {
             setCurrentProduct(d.product);
             if (selectedVariant) {
-              const matched = d.currentProduct.variants.find((v: any) => v.id === selectedVariant.id);
+              const matched = d.product.variants?.find((v: any) => v.id === selectedVariant.id);
               if (matched) setSelectedVariant(matched);
-              else if (d.currentProduct.variants.length > 0) setSelectedVariant(d.currentProduct.variants[0]);
+              else if (d.product.variants?.length > 0) setSelectedVariant(d.product.variants[0]);
             }
           }
         }
@@ -283,29 +293,61 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
             </div>
           )}
 
-          {/* Variant Selector */}
-          {currentProduct.variants.length > 1 && (
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-charcoal-500">
-                Choose Portion / Weight
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {currentProduct.variants.map((v) => (
-                  <button
-                    key={v.id}
-                    onClick={() => setSelectedVariant(v)}
-                    className={`p-3.5 rounded-xl border text-left transition-all ${
-                      selectedVariant?.id === v.id
-                        ? "border-amberGold-400 bg-amberGold-50 text-charcoal-700 ring-1 ring-amberGold-400 font-medium"
-                        : "border-cream-300 bg-cream-50 hover:bg-cream-100 text-charcoal-600"
-                    }`}
-                  >
-                    <p className="text-xs font-semibold">{v.name}</p>
-                    <p className="text-xs text-amberGold-600 font-bold mt-1">
-                      ₹{(v.priceMinor / 100).toFixed(0)}
-                    </p>
-                  </button>
-                ))}
+          {/* Variant / Portion Selector */}
+          {currentProduct.variants && currentProduct.variants.length > 0 && (
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-charcoal-700">
+                  Select Pack / Portion
+                </label>
+                {selectedVariant && (
+                  <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Selected: {selectedVariant.name}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {currentProduct.variants.map((v) => {
+                  const isSelected = selectedVariant?.id === v.id;
+                  const vPrice = Math.round(v.priceMinor / 100);
+                  const vMrp = v.mrpMinor ? Math.round(v.mrpMinor / 100) : null;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setSelectedVariant(v)}
+                      className={`relative p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? "border-stone-900 bg-stone-900 text-white shadow-md ring-2 ring-stone-900/20"
+                          : "border-cream-300 bg-white hover:border-charcoal-400 hover:bg-cream-50 text-charcoal-700 shadow-xs"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <span className="text-xs font-bold leading-tight">{v.name}</span>
+                        {isSelected && (
+                          <span className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-baseline gap-1.5 mt-1.5">
+                        <span className={`text-sm font-bold ${isSelected ? "text-amber-300" : "text-charcoal-900"}`}>
+                          ₹{vPrice}
+                        </span>
+                        {vMrp && vMrp > vPrice && (
+                          <span className={`text-[10px] line-through ${isSelected ? "text-stone-400" : "text-charcoal-400"}`}>
+                            ₹{vMrp}
+                          </span>
+                        )}
+                      </div>
+                      {v.quantityUnit && (
+                        <p className={`text-[10px] mt-0.5 ${isSelected ? "text-stone-300" : "text-charcoal-500"}`}>
+                          {v.quantityValue}{v.quantityUnit} net wt
+                        </p>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

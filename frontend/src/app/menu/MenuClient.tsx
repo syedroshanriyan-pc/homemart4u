@@ -35,7 +35,7 @@ export const MenuClient: React.FC<MenuClientProps> = ({
 
   useEffect(() => {
     setProducts(initialProducts);
-  }, [products]);
+  }, [initialProducts]);
 
   useRealTime({
     channels: ["catalog"],
@@ -63,12 +63,12 @@ export const MenuClient: React.FC<MenuClientProps> = ({
     );
   }, [initialCategories]);
 
-  // Meat & Egg products
+  // Meat & Egg products (uses live state products)
   const meatProducts = useMemo(() => {
-    return initialProducts.filter(
+    return products.filter(
       (p) => p.category?.department !== "GROCERY" && !["dairy-eggs-bread", "atta-rice-dal", "oils-ghee", "spices-masalas", "fresh-vegetables", "tea-beverages"].includes(p.category?.slug)
     );
-  }, [initialProducts]);
+  }, [products]);
 
   // Filtered products
   const filteredMeatProducts = useMemo(() => {

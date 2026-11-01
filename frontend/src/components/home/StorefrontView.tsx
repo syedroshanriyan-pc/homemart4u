@@ -34,7 +34,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
 
   useEffect(() => {
     setLiveProducts(products);
-  }, [liveProducts]);
+  }, [products]);
 
   useRealTime({
     channels: ["catalog"],

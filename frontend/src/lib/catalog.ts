@@ -3,7 +3,7 @@ import { apiClient } from "./api-client";
 export async function getActiveCategories(): Promise<any[]> {
   try {
     const data = await apiClient.get<{ categories: any[] }>("/api/categories", {
-      next: { revalidate: 60 },
+      cache: "no-store",
     } as any);
     return data.categories || [];
   } catch (err) {
@@ -19,7 +19,7 @@ export async function getActiveProducts(categorySlug?: string): Promise<any[]> {
 
     const data = await apiClient.get<{ products: any[] }>("/api/products", {
       params,
-      next: { revalidate: 60 },
+      cache: "no-store",
     } as any);
     return data.products || [];
   } catch (err) {
@@ -31,7 +31,7 @@ export async function getActiveProducts(categorySlug?: string): Promise<any[]> {
 export async function getProductBySlug(slug: string): Promise<any | null> {
   try {
     const data = await apiClient.get<{ product: any }>(`/api/products/${encodeURIComponent(slug)}`, {
-      next: { revalidate: 60 },
+      cache: "no-store",
     } as any);
     return data.product || null;
   } catch (err) {
@@ -43,7 +43,7 @@ export async function getProductBySlug(slug: string): Promise<any | null> {
 export async function getActiveCoupons(): Promise<any[]> {
   try {
     const data = await apiClient.get<{ coupons: any[] }>("/api/coupons", {
-      next: { revalidate: 60 },
+      cache: "no-store",
     } as any);
     return data.coupons || [];
   } catch (err) {

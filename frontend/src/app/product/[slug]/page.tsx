@@ -4,6 +4,8 @@ import { getProductBySlug } from "@/lib/catalog";
 import { ProductDetailClient } from "./ProductDetailClient";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
@@ -68,6 +68,16 @@ export const ProductCard: React.FC<{
     product.variants[0] || null
   );
 
+  useEffect(() => {
+    if (!product.variants || product.variants.length === 0) return;
+    setSelectedVariant((prev) => {
+      if (prev && product.variants.some((v) => v.id === prev.id)) {
+        return product.variants.find((v) => v.id === prev.id)!;
+      }
+      return product.variants[0];
+    });
+  }, [product.variants]);
+
   // Selected customizations: map of groupId -> optionId
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
@@ -99,16 +109,13 @@ export const ProductCard: React.FC<{
     e.stopPropagation();
     if (!product.isAvailable || !selectedVariant?.isAvailable) return;
 
-    // If product has required customizations or multiple variants, open customization modal
-    if (
-      (product.customizationGroups && product.customizationGroups.length > 0) ||
-      product.variants.length > 1
-    ) {
+    // If product has required customizations, open customization modal
+    if (product.customizationGroups && product.customizationGroups.length > 0) {
       setIsCustomizeOpen(true);
       return;
     }
 
-    // Direct add
+    // Direct add selected variant
     addItem({
       productId: product.id,
       variantId: selectedVariant.id,
@@ -287,33 +294,46 @@ export const ProductCard: React.FC<{
           </div>
 
           {/* Multiple Variant Selector Chips (e.g. 500g, 1kg, 1.5kg, 2kg) */}
-          {product.variants && product.variants.length > 1 && (
-            <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-              {product.variants.map((v) => {
-                const isSelected = selectedVariant?.id === v.id;
-                const vPrice = Math.round(v.priceMinor / 100);
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setSelectedVariant(v);
-                    }}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all border ${
-                      isSelected
-                        ? "bg-stone-900 border-stone-900 text-white shadow-2xs"
-                        : "bg-cream-50 border-cream-200 text-charcoal-700 hover:bg-cream-100"
-                    }`}
-                  >
-                    <span>{v.name}</span>
-                    <span className="ml-1 opacity-80 font-mono">₹{vPrice}</span>
-                  </button>
-                );
-              })}
+          {product.variants && product.variants.length > 1 ? (
+            <div className="mt-3">
+              <span className="text-[10px] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">
+                Select Portion:
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {product.variants.map((v) => {
+                  const isSelected = selectedVariant?.id === v.id;
+                  const vPrice = Math.round(v.priceMinor / 100);
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedVariant(v);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border cursor-pointer active:scale-95 ${
+                        isSelected
+                          ? "bg-stone-900 border-stone-900 text-white shadow-xs"
+                          : "bg-white border-cream-300 text-charcoal-700 hover:border-charcoal-400 hover:bg-cream-100"
+                      }`}
+                    >
+                      <span>{v.name}</span>
+                      <span className={`ml-1 font-bold ${isSelected ? "text-amber-300" : "text-emerald-700"}`}>
+                        ₹{vPrice}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
+          ) : product.variants && product.variants.length === 1 ? (
+            <div className="mt-2.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-cream-100 text-charcoal-600 border border-cream-200">
+                Portion: {product.variants[0].name}
+              </span>
+            </div>
+          ) : null}
 
           <div className="mt-4 pt-3 border-t border-cream-200 flex items-center justify-between gap-2">
             <div>
@@ -397,12 +417,12 @@ export const ProductCard: React.FC<{
                     onClick={() => setSelectedVariant(v)}
                     className={`p-3 rounded-xl border text-left transition-all ${
                       selectedVariant?.id === v.id
-                        ? "border-amberGold-400 bg-amberGold-50 text-charcoal-700 ring-1 ring-amberGold-400"
-                        : "border-cream-300 bg-cream-50 hover:bg-cream-100 text-charcoal-600"
+                        ? "border-stone-900 bg-stone-900 text-white shadow-xs ring-2 ring-stone-900/20"
+                        : "border-cream-300 bg-cream-50 hover:bg-cream-100 text-charcoal-700"
                     }`}
                   >
                     <p className="text-xs font-semibold">{v.name}</p>
-                    <p className="text-xs text-amberGold-600 font-bold mt-0.5">
+                    <p className={`text-xs font-bold mt-0.5 ${selectedVariant?.id === v.id ? "text-amber-300" : "text-emerald-700"}`}>
                       ₹{(v.priceMinor / 100).toFixed(0)}
                     </p>
                   </button>

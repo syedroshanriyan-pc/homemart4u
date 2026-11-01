@@ -12,6 +12,7 @@ export async function GET(
       include: {
         category: true,
         variants: {
+          where: { isAvailable: true },
           orderBy: { priceMinor: "asc" },
         },
         customizationGroups: {
@@ -33,7 +34,10 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ product });
+    return NextResponse.json(
+      { product },
+      { headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } }
+    );
   } catch (error) {
     console.error("Error fetching product by slug:", error);
     return NextResponse.json(

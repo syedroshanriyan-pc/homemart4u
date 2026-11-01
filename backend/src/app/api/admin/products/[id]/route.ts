@@ -54,6 +54,20 @@ export async function PATCH(
 
     // Handle nested array of variants if provided
     if (Array.isArray(body.variants) && body.variants.length > 0) {
+      const sentVariantIds = new Set(body.variants.map((v: any) => v.id).filter(Boolean));
+      // Delete or deactivate removed variants
+      const removedVariants = product.variants.filter((v) => !sentVariantIds.has(v.id));
+      for (const rem of removedVariants) {
+        try {
+          await prisma.productVariant.delete({ where: { id: rem.id } });
+        } catch {
+          await prisma.productVariant.update({
+            where: { id: rem.id },
+            data: { isAvailable: false },
+          });
+        }
+      }
+
       for (const v of body.variants) {
         const vPrice = v.priceMinor !== undefined
           ? parseInt(String(v.priceMinor), 10)

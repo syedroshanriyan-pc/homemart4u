@@ -282,3 +282,26 @@ img, video, canvas, svg {
   }
 }
 
+
+
+/* High-fidelity clean printing for Digital Tax Invoices */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #invoice-printable-area, #invoice-printable-area * {
+    visibility: visible;
+  }
+  #invoice-printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 16px;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}

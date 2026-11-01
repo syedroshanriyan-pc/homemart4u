@@ -163,6 +163,14 @@ export default function OrderHistoryPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <Link
+                      href={`/account/orders/${order.id}?invoice=true`}
+                      className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl border border-cream-300 bg-white hover:bg-cream-100 text-charcoal-700 font-medium text-xs transition shadow-2xs"
+                    >
+                      <FileText className="w-3.5 h-3.5 mr-1 text-charcoal-500" />
+                      <span>Invoice</span>
+                    </Link>
+
                     <Button
                       variant="outline"
                       size="sm"

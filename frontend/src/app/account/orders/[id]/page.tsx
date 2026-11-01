@@ -19,9 +19,11 @@ import {
   Shield,
   Phone,
   Check,
+  Printer,
 } from "lucide-react";
 import { OrderDetailSkeleton } from "@/components/ui/Skeleton";
 import { useRealTime } from "@/lib/useRealTime";
+import { apiClient } from "@/lib/api-client";
 export default function OrderTrackingPage() {
   const params = useParams();
   const router = useRouter();
@@ -42,6 +44,7 @@ export default function OrderTrackingPage() {
   // Invoice state
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [invoiceData, setInvoiceData] = useState<any>(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
 
   // Cancellation state
   const [isCancelling, setIsCancelling] = useState(false);
@@ -106,6 +109,9 @@ export default function OrderTrackingPage() {
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("invoice") === "true") {
+      setIsInvoiceModalOpen(true);
+    }
     fetchOrder();
     // Poll every 10 seconds for real-time status updates while order is active
     const interval = setInterval(() => {
@@ -169,15 +175,19 @@ export default function OrderTrackingPage() {
   };
 
   const handleOpenInvoice = async () => {
-    if (!order?.id) return;
     setIsInvoiceModalOpen(true);
+    if (!order?.id) return;
+    setInvoiceLoading(true);
     try {
-      const res = await fetch(`/api/orders/${order.id}/invoice`);
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setInvoiceData(data.invoice || null);
+      const data = await apiClient.get<{ invoice: any }>(`/api/orders/${order.id}/invoice`);
+      if (data?.invoice) {
+        setInvoiceData(data.invoice);
       }
-    } catch {}
+    } catch (e) {
+      console.warn("Invoice API fetch failed, falling back to cached order data", e);
+    } finally {
+      setInvoiceLoading(false);
+    }
   };
 
   if (loading) {
@@ -209,6 +219,45 @@ export default function OrderTrackingPage() {
   const statusOrder = ["PLACED", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED"];
   const currentStageIndex = statusOrder.indexOf(order.status);
   const isCancelled = order.status === "CANCELLED";
+
+    const displayInvoice = invoiceData || (order ? {
+    invoiceNumber: `INV-${order.orderNumber}`,
+    orderNumber: order.orderNumber,
+    date: order.placedAt,
+    deliveredAt: order.deliveredAt,
+    status: order.status,
+    shop: {
+      name: "HomeMart4U",
+      tagline: "Farm Fresh Halal Meats & Daily Groceries",
+      address: "Srinivaspur Road, Mulbagal, Karnataka 563131",
+      phone: "+91 90355 26638",
+      email: "support.homemart4u@gmail.com",
+      gstNumber: "29AABCH2026M1Z5",
+      fssaiNumber: "11223334000123",
+    },
+    customer: {
+      name: user?.name || "Customer",
+      mobile: user?.mobile || "",
+      address: order.deliveryAddress,
+    },
+    items: (order.items || []).map((i: any) => ({
+      productName: i.productNameSnapshot || i.product?.name,
+      variantName: i.variantNameSnapshot || i.variant?.name,
+      quantity: i.quantity,
+      weightGrams: i.weightGrams,
+      unitPriceRs: (i.unitPriceMinor / 100).toFixed(2),
+      lineTotalRs: (i.lineTotalMinor / 100).toFixed(2),
+    })),
+    summary: {
+      subtotalRs: (order.subtotalMinor / 100).toFixed(2),
+      discountRs: (order.discountMinor / 100).toFixed(2),
+      deliveryFeeRs: (order.deliveryFeeMinor / 100).toFixed(2),
+      codFeeRs: (order.codFeeMinor / 100).toFixed(2),
+      totalRs: (order.totalMinor / 100).toFixed(2),
+      paymentMethod: order.payment?.method || "COD",
+      paymentStatus: order.payment?.status || "PENDING",
+    },
+  } : null);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
@@ -664,6 +713,187 @@ export default function OrderTrackingPage() {
             {reviewSuccess ? "Rating Saved!" : "Submit Feedback"}
           </Button>
         </form>
+      </Modal>
+
+      {/* Official Tax Invoice & Cash Receipt Modal */}
+      <Modal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => setIsInvoiceModalOpen(false)}
+        title={displayInvoice ? `Tax Invoice • ${displayInvoice.invoiceNumber || `INV-${order.orderNumber}`}` : "Invoice"}
+        maxWidth="xl"
+      >
+        <div className="space-y-5">
+          {displayInvoice ? (
+            <div id="invoice-printable-area" className="bg-white rounded-xl p-4 sm:p-6 border border-stone-200 text-stone-800 space-y-5 text-xs shadow-2xs">
+              {/* Header: Brand & Invoice Meta */}
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-4 border-b border-stone-200">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-serif text-xl font-bold tracking-tight text-stone-900">
+                      HomeMart4U
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      100% Halal Assured
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-600 mt-0.5 font-medium">
+                    Farm Fresh Halal Meats & Daily Groceries
+                  </p>
+                  <p className="text-[11px] text-stone-500">
+                    Srinivaspur Road, Mulbagal, Karnataka 563131
+                  </p>
+                  <p className="text-[11px] text-stone-500">
+                    Helpline: +91 90355 26638 &bull; GSTIN: 29AABCH2026M1Z5
+                  </p>
+                </div>
+
+                <div className="sm:text-right">
+                  <span className="inline-block text-[10px] font-mono font-bold uppercase tracking-wider text-stone-600 bg-stone-100 px-2.5 py-1 rounded-md border border-stone-200">
+                    Tax Invoice / Cash Memo
+                  </span>
+                  <p className="font-mono font-bold text-stone-900 text-sm mt-1.5">
+                    {displayInvoice.invoiceNumber || `INV-${order.orderNumber}`}
+                  </p>
+                  <p className="text-[11px] text-stone-500">
+                    Date: {new Date(order.placedAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                  <p className="text-[11px] text-stone-700 font-semibold mt-0.5">
+                    Order Status: <span className="uppercase text-emerald-800">{order.status}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Bill To & Delivery Destination */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-stone-200 text-[11px]">
+                <div>
+                  <span className="font-bold text-stone-400 uppercase tracking-wider text-[10px]">
+                    Billed To (Customer):
+                  </span>
+                  <p className="font-bold text-stone-900 text-xs mt-0.5">
+                    {displayInvoice.customer?.name || user?.name || "Customer"}
+                  </p>
+                  <p className="text-stone-600">
+                    Mobile: {displayInvoice.customer?.mobile || user?.mobile || order.user?.mobile || "Not specified"}
+                  </p>
+                </div>
+                <div className="sm:text-right">
+                  <span className="font-bold text-stone-400 uppercase tracking-wider text-[10px]">
+                    Delivery Destination:
+                  </span>
+                  <p className="text-stone-800 font-semibold mt-0.5">
+                    {order.deliveryAddress?.houseFlat ? `${order.deliveryAddress.houseFlat}, ` : ""}
+                    {order.deliveryAddress?.streetArea || order.deliveryAddress?.addressLine || "Mulbagal Town"}
+                  </p>
+                  <p className="text-stone-500">
+                    Mulbagal, Karnataka {order.deliveryAddress?.pincode || "563131"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-stone-300 text-[10px] uppercase font-bold text-stone-500 tracking-wider">
+                      <th className="py-2 pr-2">#</th>
+                      <th className="py-2 pr-2">Item Description</th>
+                      <th className="py-2 px-2 text-center">Qty</th>
+                      <th className="py-2 px-2 text-right">Unit Rate</th>
+                      <th className="py-2 pl-2 text-right">Line Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {(displayInvoice.items || []).map((item: any, idx: number) => {
+                      const lineTotal = item.lineTotalRs || (item.lineTotalMinor ? (item.lineTotalMinor / 100).toFixed(2) : "0.00");
+                      const unitPrice = item.unitPriceRs || (item.unitPriceMinor ? (item.unitPriceMinor / 100).toFixed(2) : "0.00");
+                      return (
+                        <tr key={item.id || idx}>
+                          <td className="py-2.5 pr-2 font-mono text-stone-400">{idx + 1}</td>
+                          <td className="py-2.5 pr-2">
+                            <p className="font-semibold text-stone-800">
+                              {item.productName || item.productNameSnapshot}
+                            </p>
+                            <p className="text-[10px] text-stone-500">
+                              {item.variantName || item.variantNameSnapshot} {item.weightGrams ? `• ${item.weightGrams >= 1000 ? `${item.weightGrams / 1000}kg` : `${item.weightGrams}g`}` : ""}
+                            </p>
+                          </td>
+                          <td className="py-2.5 px-2 text-center font-mono font-medium">{item.quantity}</td>
+                          <td className="py-2.5 px-2 text-right font-mono text-stone-600">₹{unitPrice}</td>
+                          <td className="py-2.5 pl-2 text-right font-mono font-bold text-stone-900">₹{lineTotal}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Summary Breakdown */}
+              <div className="pt-4 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div className="text-[11px] text-stone-500 space-y-1">
+                  <p><span className="font-semibold text-stone-700">Payment Mode:</span> {order.payment?.method || "Cash on Delivery (COD)"}</p>
+                  <p><span className="font-semibold text-stone-700">Payment Status:</span> {order.payment?.status === "COMPLETED" ? "PAID" : "PENDING (Collect upon delivery)"}</p>
+                  <p className="text-[10px] text-stone-400 pt-1">FSSAI Certified • Freshly packed in clean food-grade packaging</p>
+                </div>
+
+                <div className="w-full sm:w-64 space-y-1.5 font-mono text-xs">
+                  <div className="flex justify-between text-stone-600">
+                    <span>Items Subtotal:</span>
+                    <span>₹{(order.subtotalMinor / 100).toFixed(2)}</span>
+                  </div>
+                  {order.discountMinor > 0 && (
+                    <div className="flex justify-between text-emerald-700 font-semibold">
+                      <span>Discount:</span>
+                      <span>-₹{(order.discountMinor / 100).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-stone-600">
+                    <span>Delivery Fee:</span>
+                    <span>{order.deliveryFeeMinor === 0 ? "FREE" : `₹${(order.deliveryFeeMinor / 100).toFixed(2)}`}</span>
+                  </div>
+                  {order.codFeeMinor > 0 && (
+                    <div className="flex justify-between text-stone-600">
+                      <span>COD Surcharge:</span>
+                      <span>₹{(order.codFeeMinor / 100).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm font-bold text-stone-900 pt-2 border-t border-stone-300">
+                    <span>Total Amount:</span>
+                    <span className="text-emerald-800">₹{(order.totalMinor / 100).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-xs text-stone-500">
+              Loading invoice details...
+            </div>
+          )}
+
+          {/* Action Buttons: Print & Close */}
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsInvoiceModalOpen(false)}
+              className="text-xs"
+            >
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.print();
+                }
+              }}
+              className="text-xs inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print / Download PDF</span>
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

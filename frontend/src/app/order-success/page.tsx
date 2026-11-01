@@ -17,6 +17,7 @@ import {
   PhoneCall,
   Calendar,
   CheckCircle2,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
@@ -481,9 +482,18 @@ function OrderSuccessContent() {
             </div>
 
             {/* Cash on Delivery Instructions Note */}
-            <p className="text-[11px] text-stone-500 leading-relaxed">
-              Please keep exact cash ready for the delivery partner upon arrival. Our rider also carries a UPI QR code if you prefer to scan and pay on delivery.
-            </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <p className="text-[11px] text-stone-500 leading-relaxed">
+                Please keep exact cash ready for the delivery partner upon arrival. Our rider also carries a UPI QR code if you prefer to scan and pay on delivery.
+              </p>
+              <Link
+                href={`${trackOrderUrl}?invoice=true`}
+                className="shrink-0 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 underline inline-flex items-center gap-1 cursor-pointer select-none"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>View Tax Invoice</span>
+              </Link>
+            </div>
           </div>
 
           {/* Stage 5: Primary Action Buttons */}

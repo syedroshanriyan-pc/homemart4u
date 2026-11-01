@@ -45,7 +45,8 @@ export async function GET(
     const isAdmin = session.role === "ADMIN" ;
     const isAssignedAgent = order.deliveryAssignment?.agentUserId === session.id;
 
-    if (!isOwner && !isAdmin && !isAssignedAgent) {
+    const isDeliveryAgent = session.role === "DELIVERY_AGENT";
+    if (!isOwner && !isAdmin && !isAssignedAgent && !isDeliveryAgent) {
       return NextResponse.json({ error: "Forbidden: You cannot access this order" }, { status: 403 });
     }
 

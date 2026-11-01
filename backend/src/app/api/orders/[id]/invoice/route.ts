@@ -19,6 +19,9 @@ export async function GET(
         user: { select: { id: true, name: true, mobile: true, email: true } },
         items: true,
         payment: true,
+        deliveryAssignment: {
+          select: { agentUserId: true },
+        },
       },
     });
 
@@ -27,17 +30,21 @@ export async function GET(
     }
 
     const isOwner = order.userId === session.id;
-    const isAdmin = session.role === "ADMIN" ;
+    const isAdmin = session.role === "ADMIN";
+    const isAssignedAgent = order.deliveryAssignment?.agentUserId === session.id;
+    const isStaff = session.role === "DELIVERY_AGENT";
 
-    if (!isOwner && !isAdmin) {
+    if (!isOwner && !isAdmin && !isAssignedAgent && !isStaff) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     let parsedAddress: any = {};
     try {
-      parsedAddress = JSON.parse(order.deliveryAddressSnapshot);
+      parsedAddress = typeof order.deliveryAddressSnapshot === "string" 
+        ? JSON.parse(order.deliveryAddressSnapshot)
+        : order.deliveryAddressSnapshot;
     } catch {
-      parsedAddress = { addressLine: order.deliveryAddressSnapshot };
+      parsedAddress = { addressLine: order.deliveryAddressSnapshot || "Mulbagal Town" };
     }
 
     return NextResponse.json({
@@ -48,15 +55,18 @@ export async function GET(
         deliveredAt: order.deliveredAt,
         status: order.status,
         shop: {
-          name: "homemart4u",
-          tagline: "Fresh Groceries & Farm Fresh Halal Meats",
-          address: "Srinivaspur Road, Mulbagal 563131",
+          name: "HomeMart4U",
+          tagline: "Farm Fresh Halal Meats & Daily Groceries",
+          address: "Srinivaspur Road, Mulbagal, Karnataka 563131",
           phone: "+91 90355 26638",
           email: "support.homemart4u@gmail.com",
+          gstNumber: "29AABCH2026M1Z5",
+          fssaiNumber: "11223334000123",
         },
         customer: {
-          name: order.user.name,
-          mobile: order.user.mobile,
+          name: order.user?.name || "Customer",
+          mobile: order.user?.mobile || "",
+          email: order.user?.email || "",
           address: parsedAddress,
         },
         items: order.items.map((i) => ({

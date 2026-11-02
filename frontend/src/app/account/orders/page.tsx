@@ -8,6 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { OrderStatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ShoppingBag, ArrowRight, RotateCcw, FileText, Clock } from "lucide-react";
+import { apiClient } from "@/lib/api-client";
 
 export default function OrderHistoryPage() {
   const { user, loading: authLoading } = useAuth();
@@ -20,10 +21,9 @@ export default function OrderHistoryPage() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch("/api/orders");
-      if (res.ok) {
-        const data = await res.json();
-        setOrders(data.orders || []);
+      const data = await apiClient.get<{ orders: any[] }>("/api/orders");
+      if (data && data.orders) {
+        setOrders(data.orders);
       }
     } catch {
     } finally {
@@ -44,9 +44,8 @@ export default function OrderHistoryPage() {
   const handleReorder = async (orderId: string) => {
     setReorderingId(orderId);
     try {
-      const res = await fetch(`/api/orders/${orderId}/reorder`, { method: "POST" });
-      const data = await res.json();
-      if (res.ok && data.items) {
+      const data = await apiClient.post<{ items?: any[]; error?: string }>(`/api/orders/${orderId}/reorder`);
+      if (data && data.items) {
         // Add items to cart with CURRENT prices
         data.items.forEach((item: any) => {
           addItem({
@@ -61,7 +60,7 @@ export default function OrderHistoryPage() {
         });
         router.push("/cart");
       } else {
-        alert(data.error || "Some items are currently unavailable for reorder.");
+        alert(data?.error || "Some items are currently unavailable for reorder.");
       }
     } catch {
       alert("Failed to reorder. Please try again.");

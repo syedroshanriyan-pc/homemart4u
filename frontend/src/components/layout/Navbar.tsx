@@ -29,6 +29,25 @@ export const Navbar: React.FC = () => {
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [storeStatus, setStoreStatus] = useState<"OPEN" | "CLOSED">("OPEN");
+  const [storeClosedMessage, setStoreClosedMessage] = useState<string>(
+    "We're currently closed. You can browse our menu, but ordering is temporarily unavailable."
+  );
+
+  React.useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          const s = data.settings || {};
+          if (s.store_status) setStoreStatus(s.store_status);
+          if (s.store_closed_message) setStoreClosedMessage(s.store_closed_message);
+        }
+      } catch {}
+    };
+    fetchStatus();
+  }, []);
 
   // Lock body scroll when side drawer is open
   React.useEffect(() => {
@@ -58,15 +77,27 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      {/* Top Banner: Service Area & Delivery Promise */}
-      <div className="bg-stone-900 text-stone-200 text-xs py-1.5 px-4 text-center font-sans tracking-wide border-b border-stone-800">
+      {/* Top Banner: Service Area & Delivery Promise & Store Operating Status */}
+      <div className={`text-xs py-1.5 px-4 text-center font-sans tracking-wide border-b transition-colors ${
+        storeStatus === "CLOSED"
+          ? "bg-amber-950 text-amber-200 border-amber-900"
+          : "bg-stone-900 text-stone-200 border-stone-800"
+      }`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between text-[11px] sm:text-xs">
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-rose-300 font-medium">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Srinivaspur Road Hub &bull; Express ~20 Min Delivery
+          <span className="hidden sm:inline-flex items-center gap-1.5 font-medium">
+            <span className={`h-2 w-2 rounded-full ${storeStatus === "CLOSED" ? "bg-amber-400 animate-pulse" : "bg-emerald-400 animate-pulse"}`} />
+            <span>{storeStatus === "CLOSED" ? "Store Temporarily Closed" : "We're open and accepting orders."}</span>
           </span>
-          <span className="mx-auto sm:mx-0 flex items-center gap-1.5">
-            <strong>homemart4u</strong> &bull; Fresh Groceries &amp; 100% Halal Meats &bull; First 3 km FREE
+          <span className="mx-auto sm:mx-0 flex items-center gap-1.5 font-semibold">
+            {storeStatus === "CLOSED" ? (
+              <span className="text-amber-300">
+                {storeClosedMessage}
+              </span>
+            ) : (
+              <span>
+                <strong>homemart4u</strong> &bull; Fresh Chicken &amp; Desi Eggs &bull; First 3 km FREE
+              </span>
+            )}
           </span>
           <div className="hidden md:flex items-center gap-2 text-stone-300">
             <span>Call:</span>

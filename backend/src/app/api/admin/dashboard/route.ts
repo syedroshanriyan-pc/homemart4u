@@ -174,6 +174,42 @@ export async function GET(req: NextRequest) {
     const deliveredOrders = statusMap.DELIVERED || 0;
     const failedDeliveries = statusMap.CANCELLED || 0;
 
+    // 6. Comprehensive PostgreSQL Totals & Store Status
+    const [
+      totalProductsCount,
+      activeProductsCount,
+      outOfStockProductsCount,
+      totalCategoriesCount,
+      allTimeOrdersCount,
+      pendingOrdersCount,
+      completedOrdersCount,
+      allTimeSalesData,
+      storeStatusRecord,
+    ] = await Promise.all([
+      prisma.product.count(),
+      prisma.product.count({ where: { isActive: true } }),
+      prisma.product.count({ where: { isAvailable: false, isActive: true } }),
+      prisma.category.count(),
+      prisma.order.count(),
+      prisma.order.count({
+        where: { status: { in: ["PLACED", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"] } },
+      }),
+      prisma.order.count({ where: { status: "DELIVERED" } }),
+      prisma.order.aggregate({
+        where: { status: { not: "CANCELLED" } },
+        _sum: { totalMinor: true },
+      }),
+      prisma.systemSetting.findFirst({
+        where: { key: { in: ["store_status", "store_open_status", "STORE_OPEN"] } },
+      }),
+    ]);
+
+    const totalRevenueMinor = allTimeSalesData._sum.totalMinor || 0;
+    const store_status =
+      storeStatusRecord?.value === "CLOSED" || storeStatusRecord?.value === "false"
+        ? "CLOSED"
+        : "OPEN";
+
     return NextResponse.json({
       metrics: {
         todaySalesMinor,
@@ -194,6 +230,17 @@ export async function GET(req: NextRequest) {
         outstandingCollectionMinor,
         collectionsRequiringReconciliation,
         past2DaysTotal: past2DaysOrders.length,
+
+        // Real PostgreSQL System Totals
+        totalProducts: totalProductsCount,
+        activeProducts: activeProductsCount,
+        outOfStockProductsCount,
+        totalCategories: totalCategoriesCount,
+        allTimeOrders: allTimeOrdersCount,
+        pendingOrders: pendingOrdersCount,
+        completedOrders: completedOrdersCount,
+        totalRevenueMinor,
+        store_status,
       },
       alerts: {
         unassignedOrders,

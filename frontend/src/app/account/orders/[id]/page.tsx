@@ -30,8 +30,22 @@ export default function OrderTrackingPage() {
   const { user } = useAuth();
   const orderId = params.id as string;
 
-  const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // Instant State: Preload order from sessionStorage if available for zero-latency rendering
+  const [order, setOrder] = useState<any>(() => {
+    if (typeof window !== "undefined" && orderId) {
+      try {
+        const stored = sessionStorage.getItem("fc_latest_order");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.id === orderId || parsed.orderNumber === orderId)) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState<boolean>(() => !order);
   const [errorMsg, setErrorMsg] = useState("");
 
   // Review state
@@ -93,16 +107,17 @@ export default function OrderTrackingPage() {
 
   const fetchOrder = async () => {
     try {
-      const res = await fetch(`/api/orders/${orderId}`);
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setOrder(data.order || null);
-      } else {
-        const err = await res.json().catch(() => ({}));
-        setErrorMsg(err.error || "Order not found");
+      const data = await apiClient.get<{ order: any }>(`/api/orders/${orderId}`);
+      if (data && data.order) {
+        setOrder(data.order);
+        setErrorMsg("");
+      } else if (!order) {
+        setErrorMsg("Order not found");
       }
-    } catch {
-      setErrorMsg("Failed to connect to server");
+    } catch (err: any) {
+      if (!order) {
+        setErrorMsg(err.message || "Failed to connect to server");
+      }
     } finally {
       setLoading(false);
     }
@@ -110,7 +125,7 @@ export default function OrderTrackingPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("invoice") === "true") {
-      setIsInvoiceModalOpen(true);
+      handleOpenInvoice();
     }
     fetchOrder();
     // Poll every 10 seconds for real-time status updates while order is active
@@ -131,17 +146,10 @@ export default function OrderTrackingPage() {
     if (!confirm("Are you sure you want to cancel this order?")) return;
     setIsCancelling(true);
     try {
-      const res = await fetch(`/api/orders/${order.id}/cancel`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: "Customer requested cancellation" }),
+      const res = await apiClient.post(`/api/orders/${order.id}/cancel`, {
+        reason: "Customer requested cancellation",
       });
-      if (res.ok) {
-        await fetchOrder();
-      } else {
-        const d = await res.json().catch(() => ({}));
-        alert(d.error || "Unable to cancel order");
-      }
+      await fetchOrder();
     } catch {
       alert("Error cancelling order");
     } finally {
@@ -154,19 +162,13 @@ export default function OrderTrackingPage() {
     if (!order?.id) return;
     setSubmittingReview(true);
     try {
-      const res = await fetch(`/api/orders/${order.id}/review`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating, comment: reviewComment }),
+      await apiClient.post(`/api/orders/${order.id}/review`, {
+        rating,
+        comment: reviewComment,
       });
-      if (res.ok) {
-        setReviewSuccess(true);
-        await fetchOrder();
-        setTimeout(() => setIsReviewModalOpen(false), 1200);
-      } else {
-        const d = await res.json().catch(() => ({}));
-        alert(d.error || "Failed to submit review");
-      }
+      setReviewSuccess(true);
+      await fetchOrder();
+      setTimeout(() => setIsReviewModalOpen(false), 1200);
     } catch {
       alert("Error submitting review");
     } finally {

@@ -20,6 +20,9 @@ import {
   FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { apiClient } from "@/lib/api-client";
+import { Printer } from "lucide-react";
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
@@ -46,6 +49,28 @@ function OrderSuccessContent() {
   const [loading, setLoading] = useState<boolean>(() => !order);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Tax Invoice Modal State directly on Order Success Screen
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<any>(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+
+  const handleOpenInvoice = async () => {
+    setIsInvoiceModalOpen(true);
+    const ordId = order?.id || orderId;
+    if (!ordId) return;
+    setInvoiceLoading(true);
+    try {
+      const data = await apiClient.get<{ invoice: any }>(`/api/orders/${ordId}/invoice`);
+      if (data?.invoice) {
+        setInvoiceData(data.invoice);
+      }
+    } catch {
+      // Fallback will use local order data
+    } finally {
+      setInvoiceLoading(false);
+    }
+  };
 
   // Clear any lingering cart items upon landing on confirmation screen
   useEffect(() => {
@@ -112,29 +137,12 @@ function OrderSuccessContent() {
   const targetOrderId = order?.id || order?.orderNumber || orderId;
   const trackOrderUrl = targetOrderId ? `/account/orders/${targetOrderId}` : "/account/orders";
 
-  const handleContinueShopping = (e: React.MouseEvent) => {
-    e.preventDefault();
-    try {
-      router.push("/menu");
-    } catch {}
-    setTimeout(() => {
-      window.location.href = "/menu";
-    }, 60);
-  };
-
-  const handleTrackMyOrder = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const saveOrderToSession = () => {
     if (typeof window !== "undefined" && order) {
       try {
         sessionStorage.setItem("fc_latest_order", JSON.stringify(order));
       } catch {}
     }
-    try {
-      router.push(trackOrderUrl);
-    } catch {}
-    setTimeout(() => {
-      window.location.href = trackOrderUrl;
-    }, 60);
   };
 
   if (loading) {
@@ -214,6 +222,45 @@ function OrderSuccessContent() {
         hour12: true,
       })
     : "Just now";
+
+  const displayInvoice = invoiceData || (order ? {
+    invoiceNumber: `INV-${order.orderNumber}`,
+    orderNumber: order.orderNumber,
+    date: order.placedAt || order.createdAt,
+    deliveredAt: order.deliveredAt,
+    status: order.status,
+    shop: {
+      name: "HomeMart4U",
+      tagline: "Farm Fresh Halal Meats & Daily Groceries",
+      address: "Srinivaspur Road, Mulbagal, Karnataka 563131",
+      phone: "+91 90355 26638",
+      email: "support.homemart4u@gmail.com",
+      gstNumber: "29AABCH2026M1Z5",
+      fssaiNumber: "11223334000123",
+    },
+    customer: {
+      name: order.user?.name || "Customer",
+      mobile: order.user?.mobile || "",
+      address: parsedAddress,
+    },
+    items: (order.items || []).map((i: any) => ({
+      productName: i.productNameSnapshot || i.product?.name,
+      variantName: i.variantNameSnapshot || i.variant?.name,
+      quantity: i.quantity,
+      weightGrams: i.weightGrams,
+      unitPriceRs: (i.unitPriceMinor / 100).toFixed(2),
+      lineTotalRs: (i.lineTotalMinor / 100).toFixed(2),
+    })),
+    summary: {
+      subtotalRs: (order.subtotalMinor / 100).toFixed(2),
+      discountRs: (order.discountMinor / 100).toFixed(2),
+      deliveryFeeRs: (order.deliveryFeeMinor / 100).toFixed(2),
+      codFeeRs: (order.codFeeMinor / 100).toFixed(2),
+      totalRs: (order.totalMinor / 100).toFixed(2),
+      paymentMethod: order.payment?.method || "COD",
+      paymentStatus: order.payment?.status || "PENDING",
+    },
+  } : null);
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 pb-24 sm:pb-32 space-y-8 animate-fade-in">
@@ -486,13 +533,14 @@ function OrderSuccessContent() {
               <p className="text-[11px] text-stone-500 leading-relaxed">
                 Please keep exact cash ready for the delivery partner upon arrival. Our rider also carries a UPI QR code if you prefer to scan and pay on delivery.
               </p>
-              <Link
-                href={`${trackOrderUrl}?invoice=true`}
+              <button
+                type="button"
+                onClick={handleOpenInvoice}
                 className="shrink-0 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 underline inline-flex items-center gap-1 cursor-pointer select-none"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>View Tax Invoice</span>
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -500,7 +548,6 @@ function OrderSuccessContent() {
           <div className="relative z-30 p-5 sm:p-6 bg-stone-50 border-t border-stone-200 flex flex-col sm:flex-row gap-3 justify-end">
             <Link
               href="/menu"
-              onClick={handleContinueShopping}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-stone-300 bg-white hover:bg-stone-100 active:bg-stone-200 text-stone-800 text-xs font-bold transition shadow-2xs hover:shadow-sm text-center cursor-pointer select-none touch-manipulation active:scale-[0.98]"
             >
               <ShoppingBag className="w-4 h-4 text-stone-600" />
@@ -508,7 +555,7 @@ function OrderSuccessContent() {
             </Link>
             <Link
               href={trackOrderUrl}
-              onClick={handleTrackMyOrder}
+              onClick={saveOrderToSession}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20 text-center cursor-pointer select-none touch-manipulation active:scale-[0.98]"
             >
               <Truck className="w-4 h-4" />
@@ -516,6 +563,195 @@ function OrderSuccessContent() {
             </Link>
           </div>
         </div>
+      {/* Official Tax Invoice & Cash Memo Modal on Confirmation Page */}
+      <Modal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => setIsInvoiceModalOpen(false)}
+        title={displayInvoice ? `Tax Invoice • ${displayInvoice.invoiceNumber || `INV-${order.orderNumber}`}` : "Invoice"}
+        maxWidth="xl"
+      >
+        <div className="space-y-5">
+          {displayInvoice ? (
+            <div id="invoice-printable-area" className="bg-white rounded-xl p-4 sm:p-6 border border-stone-200 text-stone-800 space-y-5 text-xs shadow-2xs">
+              {/* Header: Brand & Invoice Meta */}
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-4 border-b border-stone-200">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-serif text-xl font-bold tracking-tight text-stone-900">
+                      HomeMart4U
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      100% Halal Assured
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-600 mt-0.5 font-medium">
+                    Farm Fresh Halal Meats &amp; Daily Groceries
+                  </p>
+                  <p className="text-[11px] text-stone-500">
+                    Srinivaspur Road, Mulbagal, Karnataka 563131
+                  </p>
+                  <p className="text-[11px] text-stone-500">
+                    Helpline: +91 90355 26638 &bull; GSTIN: 29AABCH2026M1Z5
+                  </p>
+                </div>
+
+                <div className="sm:text-right">
+                  <span className="inline-block text-[10px] font-mono font-bold uppercase tracking-wider text-stone-600 bg-stone-100 px-2.5 py-1 rounded-md border border-stone-200">
+                    Tax Invoice / Cash Memo
+                  </span>
+                  <p className="font-mono font-bold text-stone-900 text-sm mt-1.5">
+                    {displayInvoice.invoiceNumber || `INV-${order.orderNumber}`}
+                  </p>
+                  <p className="text-[11px] text-stone-500">
+                    Date: {new Date(order.placedAt || order.createdAt || Date.now()).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                  <p className="text-[11px] text-stone-700 font-semibold mt-0.5">
+                    Order Status: <span className="uppercase text-emerald-800">{order.status || "CONFIRMED"}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Bill To & Delivery Destination */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-stone-200 text-[11px]">
+                <div>
+                  <span className="font-bold text-stone-400 uppercase tracking-wider text-[10px]">
+                    Billed To (Customer):
+                  </span>
+                  <p className="font-bold text-stone-900 text-xs mt-0.5">
+                    {displayInvoice.customer?.name || order.user?.name || "Customer"}
+                  </p>
+                  <p className="text-stone-600">
+                    Mobile: {displayInvoice.customer?.mobile || order.user?.mobile || parsedAddress?.phone || "Not specified"}
+                  </p>
+                </div>
+                <div className="sm:text-right">
+                  <span className="font-bold text-stone-400 uppercase tracking-wider text-[10px]">
+                    Delivery Destination:
+                  </span>
+                  <p className="text-stone-800 font-semibold mt-0.5">
+                    {parsedAddress?.addressLine || parsedAddress?.streetArea || "Mulbagal Town"}
+                  </p>
+                  <p className="text-stone-500">
+                    Mulbagal, Karnataka {parsedAddress?.pincode || "563131"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-stone-300 text-[10px] uppercase font-bold text-stone-500 tracking-wider">
+                      <th className="py-2 pr-2">#</th>
+                      <th className="py-2 pr-2">Item Description</th>
+                      <th className="py-2 px-2 text-center">Qty</th>
+                      <th className="py-2 px-2 text-right">Unit Rate</th>
+                      <th className="py-2 pl-2 text-right">Line Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {(displayInvoice.items || []).map((item: any, idx: number) => {
+                      const lineTotal = item.lineTotalRs || (item.lineTotalMinor ? (item.lineTotalMinor / 100).toFixed(2) : "0.00");
+                      const unitPrice = item.unitPriceRs || (item.unitPriceMinor ? (item.unitPriceMinor / 100).toFixed(2) : "0.00");
+                      return (
+                        <tr key={item.id || idx}>
+                          <td className="py-2.5 pr-2 font-mono text-stone-400">{idx + 1}</td>
+                          <td className="py-2.5 pr-2">
+                            <p className="font-semibold text-stone-800">
+                              {item.productName || item.productNameSnapshot}
+                            </p>
+                            <p className="text-[10px] text-stone-500">
+                              {item.variantName || item.variantNameSnapshot} {item.weightGrams ? `• ${item.weightGrams >= 1000 ? `${item.weightGrams / 1000}kg` : `${item.weightGrams}g`}` : ""}
+                            </p>
+                          </td>
+                          <td className="py-2.5 px-2 text-center font-mono font-medium">{item.quantity}</td>
+                          <td className="py-2.5 px-2 text-right font-mono text-stone-600">₹{unitPrice}</td>
+                          <td className="py-2.5 pl-2 text-right font-mono font-bold text-stone-900">₹{lineTotal}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Summary Breakdown */}
+              <div className="pt-4 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div className="text-[11px] text-stone-500 space-y-1">
+                  <p><span className="font-semibold text-stone-700">Payment Mode:</span> {order.payment?.method || "Cash on Delivery (COD)"}</p>
+                  <p><span className="font-semibold text-stone-700">Payment Status:</span> {order.payment?.status === "COMPLETED" ? "PAID" : "PENDING (Collect upon delivery)"}</p>
+                  <p className="text-[10px] text-stone-400 pt-1">FSSAI Certified • Freshly packed in clean food-grade packaging</p>
+                </div>
+
+                <div className="w-full sm:w-64 space-y-1.5 font-mono text-xs">
+                  <div className="flex justify-between text-stone-600">
+                    <span>Items Subtotal:</span>
+                    <span>₹{(order.subtotalMinor / 100).toFixed(2)}</span>
+                  </div>
+                  {order.discountMinor > 0 && (
+                    <div className="flex justify-between text-emerald-700 font-semibold">
+                      <span>Discount:</span>
+                      <span>-₹{(order.discountMinor / 100).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-stone-600">
+                    <span>Delivery Fee:</span>
+                    <span>{order.deliveryFeeMinor === 0 ? "FREE" : `₹${(order.deliveryFeeMinor / 100).toFixed(2)}`}</span>
+                  </div>
+                  {order.codFeeMinor > 0 && (
+                    <div className="flex justify-between text-stone-600">
+                      <span>COD Surcharge:</span>
+                      <span>₹{(order.codFeeMinor / 100).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm font-bold text-stone-900 pt-2 border-t border-stone-300">
+                    <span>Total Payable:</span>
+                    <span>₹{(order.totalMinor / 100).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="py-12 text-center text-stone-500 text-xs">
+              <div className="w-8 h-8 rounded-full border-2 border-stone-200 border-t-emerald-600 animate-spin mx-auto mb-2" />
+              <span>Preparing invoice details...</span>
+            </div>
+          )}
+
+          {/* Modal Actions */}
+          <div className="flex items-center justify-between pt-2 border-t border-stone-200">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.print();
+                }
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold transition"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print Invoice</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href={trackOrderUrl}
+                onClick={saveOrderToSession}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-xs"
+              >
+                <Truck className="w-3.5 h-3.5" />
+                <span>Track Live Order</span>
+              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsInvoiceModalOpen(false)}
+                className="text-xs"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
       </div>
     </div>
   );

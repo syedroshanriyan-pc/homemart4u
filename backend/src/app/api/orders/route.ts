@@ -269,6 +269,11 @@ export async function POST(req: NextRequest) {
               "SHOP_LNG",
               "MIN_QUALIFYING_MEAT_GRAMS",
               "minimum_order_meat_grams",
+              "store_status",
+              "store_open_status",
+              "STORE_OPEN",
+              "store_closed_message",
+              "ORDER_ACCEPTANCE_ENABLED",
             ],
           },
         },
@@ -277,6 +282,25 @@ export async function POST(req: NextRequest) {
         ? prisma.coupon.findUnique({ where: { code: String(couponCode).trim().toUpperCase() } })
         : Promise.resolve(null),
     ]);
+
+    // 4.1 Authoritatively enforce Store Status (Store Open / Store Closed)
+    const storeStatusSetting = systemSettings.find(
+      (s) => s.key === "store_status" || s.key === "store_open_status" || s.key === "STORE_OPEN"
+    );
+    const storeClosedMsgSetting = systemSettings.find((s) => s.key === "store_closed_message");
+    const isStoreClosed =
+      storeStatusSetting?.value === "CLOSED" || storeStatusSetting?.value === "false";
+
+    if (isStoreClosed) {
+      return NextResponse.json(
+        {
+          error:
+            storeClosedMsgSetting?.value?.trim() ||
+            "The store is currently closed. Please try again when we reopen.",
+        },
+        { status: 403 }
+      );
+    }
 
     const variantMap = new Map<string, any>(variants.map((v: any) => [v.id, v]));
     const optionMap = new Map<string, any>(customizationOptions.map((o: any) => [o.id, o]));

@@ -35,6 +35,23 @@ export default function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [storeStatus, setStoreStatus] = useState<string>("OPEN");
+  const [storeClosedMessage, setStoreClosedMessage] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.settings?.store_status) {
+          setStoreStatus(data.settings.store_status);
+        }
+        if (data?.settings?.store_closed_message) {
+          setStoreClosedMessage(data.settings.store_closed_message);
+        }
+      })
+      .catch(() => {});
+  }, []);
   
   const idempotencyKeyRef = useRef<string>("");
   const isOrderPlacedRef = useRef(false);
@@ -105,6 +122,10 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (storeStatus === "CLOSED") {
+      setErrorMessage(storeClosedMessage || "The store is currently closed and not accepting new orders.");
+      return;
+    }
     if (!selectedAddress) {
       setErrorMessage("Please select or enter your delivery address in Mulbagal.");
       return;
@@ -189,6 +210,18 @@ export default function CheckoutPage() {
           Direct delivery from Mulbagal Hub &bull; Fresh cut upon order confirmation &bull; Target ~20 minutes
         </p>
       </div>
+
+      {storeStatus === "CLOSED" && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex items-start gap-3 shadow-xs">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-bold text-sm">Store is Currently Closed</h4>
+            <p className="text-xs text-amber-800 mt-0.5">
+              {storeClosedMessage || "We are currently closed and unable to accept new orders. Please check back when we reopen."}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Address & Payment Selection */}
@@ -387,10 +420,18 @@ export default function CheckoutPage() {
                 size="lg"
                 onClick={handlePlaceOrder}
                 isLoading={isSubmitting}
-                disabled={!selectedAddress}
-                className="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl shadow-xs font-bold text-sm tracking-wide"
+                disabled={storeStatus === "CLOSED" || !selectedAddress}
+                className={`w-full py-3 ${
+                  storeStatus === "CLOSED"
+                    ? "bg-amber-800 cursor-not-allowed text-amber-100 opacity-80"
+                    : "bg-stone-900 hover:bg-stone-800 text-white"
+                } rounded-xl shadow-xs font-bold text-sm tracking-wide`}
               >
-                <span>Confirm &amp; Place Order &bull; ₹{totalRs.toFixed(0)}</span>
+                <span>
+                  {storeStatus === "CLOSED"
+                    ? "Store Closed — Ordering Disabled"
+                    : `Confirm & Place Order • ₹${totalRs.toFixed(0)}`}
+                </span>
               </Button>
             </div>
 

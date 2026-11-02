@@ -99,6 +99,10 @@ export async function POST(req: NextRequest) {
               "SHOP_LNG",
               "MIN_QUALIFYING_MEAT_GRAMS",
               "minimum_order_meat_grams",
+              "store_status",
+              "store_open_status",
+              "STORE_OPEN",
+              "store_closed_message",
             ],
           },
         },
@@ -110,6 +114,20 @@ export async function POST(req: NextRequest) {
         ? prisma.coupon.findUnique({ where: { code: String(couponCode).trim().toUpperCase() } })
         : Promise.resolve(null),
     ]);
+
+    const storeStatusSetting = systemSettings.find(
+      (s) => s.key === "store_status" || s.key === "store_open_status" || s.key === "STORE_OPEN"
+    );
+    const storeClosedMsgSetting = systemSettings.find((s) => s.key === "store_closed_message");
+    const isStoreClosed =
+      storeStatusSetting?.value === "CLOSED" || storeStatusSetting?.value === "false";
+
+    if (isStoreClosed) {
+      errors.push(
+        storeClosedMsgSetting?.value?.trim() ||
+          "The store is currently closed. Ordering is temporarily unavailable."
+      );
+    }
 
     // Build O(1) lookup maps
     const variantMap = new Map<string, any>(variants.map((v: any) => [v.id, v]));

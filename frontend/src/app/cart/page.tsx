@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
@@ -38,6 +38,23 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState(couponCode || "");
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [couponMsg, setCouponMsg] = useState("");
+
+  const [storeStatus, setStoreStatus] = useState<string>("OPEN");
+  const [storeClosedMessage, setStoreClosedMessage] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.settings?.store_status) {
+          setStoreStatus(data.settings.store_status);
+        }
+        if (data?.settings?.store_closed_message) {
+          setStoreClosedMessage(data.settings.store_closed_message);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +110,18 @@ export default function CartPage() {
           <span>Clear Cart</span>
         </button>
       </div>
+
+      {storeStatus === "CLOSED" && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex items-start gap-3 shadow-xs">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-bold text-sm">Store is Temporarily Closed</h4>
+            <p className="text-xs text-amber-800 mt-0.5">
+              {storeClosedMessage || "We are currently closed and not accepting new orders at this time. You can still review your cart and browse our catalogue."}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Cart Items List */}
@@ -348,7 +377,16 @@ export default function CartPage() {
 
             {/* Checkout CTA */}
             <div className="pt-2">
-              {(!isMinMeatMet || (validation && !validation.isValid)) ? (
+              {storeStatus === "CLOSED" ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 font-bold text-sm cursor-not-allowed shadow-none"
+                >
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <span>Store Closed &bull; Ordering Paused</span>
+                </button>
+              ) : (!isMinMeatMet || (validation && !validation.isValid)) ? (
                 <button
                   type="button"
                   disabled

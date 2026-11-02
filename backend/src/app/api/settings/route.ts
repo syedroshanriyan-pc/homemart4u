@@ -19,8 +19,10 @@ const PUBLIC_ALLOWED_SETTING_KEYS = new Set([
   "SHOP_LAT",
   "shop_longitude",
   "SHOP_LNG",
+  "store_status",
   "store_open_status",
   "STORE_OPEN",
+  "store_closed_message",
   "free_delivery_radius_meters",
   "FREE_DELIVERY_METERS",
   "delivery_rate_per_100m_paise",
@@ -50,7 +52,9 @@ export async function GET() {
       shop_email: "support.homemart4u@gmail.com",
       shop_latitude: String(DEFAULT_SHOP_COORDINATES.lat),
       shop_longitude: String(DEFAULT_SHOP_COORDINATES.lng),
+      store_status: "OPEN",
       store_open_status: "OPEN",
+      store_closed_message: "We're currently closed. You can browse our menu, but ordering is temporarily unavailable.",
       free_delivery_radius_meters: "3000",
       delivery_rate_per_100m_paise: "150",
       cod_surcharge_paise: "700",
@@ -62,6 +66,14 @@ export async function GET() {
         settingsMap[s.key] = s.value;
         if (s.key === "shop_name" || s.key === "SHOP_NAME") {
           settingsMap.shop_name = s.value;
+        }
+        if (s.key === "store_status" || s.key === "store_open_status") {
+          settingsMap.store_status = s.value;
+          settingsMap.store_open_status = s.value;
+        }
+        if (s.key === "STORE_OPEN") {
+          const val = s.value === "false" ? "CLOSED" : "OPEN";
+          if (!settingsMap.store_status) settingsMap.store_status = val;
         }
       }
     });

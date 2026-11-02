@@ -124,6 +124,74 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
+      {/* Store Operating Status Control Card */}
+      <div className={`p-4 sm:p-5 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-subtle transition-all ${
+        (metrics.store_status || "OPEN") === "OPEN"
+          ? "bg-emerald-50/70 border-emerald-300"
+          : "bg-rose-50/70 border-rose-300"
+      }`}>
+        <div className="flex items-center gap-3.5">
+          <div className={`p-3 rounded-xl ${
+            (metrics.store_status || "OPEN") === "OPEN"
+              ? "bg-emerald-100 text-emerald-800"
+              : "bg-rose-100 text-rose-800"
+          }`}>
+            <span className={`w-3 h-3 rounded-full block animate-pulse ${
+              (metrics.store_status || "OPEN") === "OPEN" ? "bg-emerald-600" : "bg-rose-600"
+            }`} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-charcoal-900">
+                Store Status: {(metrics.store_status || "OPEN") === "OPEN" ? "OPEN & ACCEPTING ORDERS" : "CLOSED (ORDERING PAUSED)"}
+              </h3>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                (metrics.store_status || "OPEN") === "OPEN"
+                  ? "bg-emerald-200/60 text-emerald-900"
+                  : "bg-rose-200/60 text-rose-900"
+              }`}>
+                {(metrics.store_status || "OPEN") === "OPEN" ? "Live Ordering Enabled" : "Checkout Blocked"}
+              </span>
+            </div>
+            <p className="text-xs text-charcoal-500 mt-0.5">
+              {(metrics.store_status || "OPEN") === "OPEN"
+                ? "Customers can add items to cart, browse, and place new Cash on Delivery orders."
+                : "Customers can browse products, but checkout and API order creation are blocked."}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={async () => {
+            const nextStatus = (metrics.store_status || "OPEN") === "OPEN" ? "CLOSED" : "OPEN";
+            const confirmMsg = nextStatus === "CLOSED"
+              ? "Are you sure you want to CLOSE the store? Order creation will be blocked."
+              : "Are you sure you want to OPEN the store and accept new orders?";
+            if (!window.confirm(confirmMsg)) return;
+
+            try {
+              const res = await fetch("/api/admin/store-status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: nextStatus }),
+              });
+              if (res.ok) {
+                fetchDashboardData();
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          }}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer ${
+            (metrics.store_status || "OPEN") === "OPEN"
+              ? "bg-rose-600 hover:bg-rose-700 text-white"
+              : "bg-emerald-600 hover:bg-emerald-700 text-white"
+          }`}
+        >
+          {(metrics.store_status || "OPEN") === "OPEN" ? "Close Store Now" : "Open Store Now"}
+        </button>
+      </div>
+
       {/* 1. Core KPI Metric Cards (Strictly Persisted Delivery Collections & Live Metrics) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
         {/* Total Today Sales */}

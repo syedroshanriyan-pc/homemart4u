@@ -35,6 +35,49 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [storeStatus, setStoreStatus] = useState<"OPEN" | "CLOSED">("OPEN");
+  const [togglingStore, setTogglingStore] = useState(false);
+
+  const fetchStoreStatus = async () => {
+    try {
+      const res = await fetch("/api/admin/store-status");
+      if (res.ok) {
+        const d = await res.json();
+        if (d.store_status) setStoreStatus(d.store_status);
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchStoreStatus();
+  }, []);
+
+  const toggleStoreStatus = async () => {
+    const nextStatus = storeStatus === "OPEN" ? "CLOSED" : "OPEN";
+    const confirmPrompt = nextStatus === "CLOSED"
+      ? "Are you sure you want to CLOSE the store? Customers will not be able to place new orders until reopened."
+      : "Are you sure you want to OPEN the store and start accepting orders?";
+    if (!window.confirm(confirmPrompt)) return;
+
+    setTogglingStore(true);
+    try {
+      const res = await fetch("/api/admin/store-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (res.ok) {
+        setStoreStatus(nextStatus);
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to update store status");
+      }
+    } catch (e: any) {
+      alert(e?.message || "Error updating store status");
+    } finally {
+      setTogglingStore(false);
+    }
+  };
 
   // If loading without cached user, show initial verification state
   if (loading && !user) {
@@ -204,6 +247,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Store Status Toggle */}
+            <button
+              type="button"
+              onClick={toggleStoreStatus}
+              disabled={togglingStore}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer ${
+                storeStatus === "OPEN"
+                  ? "bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200"
+                  : "bg-rose-100 text-rose-900 border border-rose-300 hover:bg-rose-200"
+              }`}
+              title={`Store is currently ${storeStatus}. Click to ${storeStatus === "OPEN" ? "CLOSE" : "OPEN"}.`}
+            >
+              <span className={`w-2 h-2 rounded-full ${storeStatus === "OPEN" ? "bg-emerald-600 animate-pulse" : "bg-rose-600 animate-pulse"}`} />
+              <span>{togglingStore ? "Updating..." : storeStatus === "OPEN" ? "Store OPEN" : "Store CLOSED"}</span>
+            </button>
+
             {/* Direct Customer Storefront Link - Always accessible on mobile & desktop */}
             <Link
               href="/"

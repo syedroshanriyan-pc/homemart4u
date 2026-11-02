@@ -50,19 +50,24 @@ model Address {
 }
 
 model Category {
-  id           String    @id @default(cuid())
+  id           String     @id @default(cuid())
+  parentId     String?
   name         String
-  slug         String    @unique
-  department   String    @default("MEAT") // MEAT, GROCERY
+  slug         String     @unique
+  department   String     @default("MEAT") // MEAT, GROCERY
   description  String?
   imageUrl     String?
-  isActive     Boolean   @default(true)
-  isComingSoon Boolean   @default(false)
-  displayOrder Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  isActive     Boolean    @default(true)
+  isComingSoon Boolean    @default(false)
+  displayOrder Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  products Product[]
+  parent       Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Category[] @relation("CategoryHierarchy")
+  products     Product[]
+
+  @@index([parentId])
 }
 
 model Product {
@@ -492,3 +497,11 @@ model OfferContent {
   @@index([status, priority])
 }
 
+
+model RateLimit {
+  key     String   @id
+  count   Int      @default(1)
+  resetAt DateTime
+
+  @@map("_RateLimit")
+}

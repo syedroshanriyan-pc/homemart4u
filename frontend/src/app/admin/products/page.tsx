@@ -185,7 +185,7 @@ export default function AdminProductsPage() {
       setLoading(true);
       const [prodRes, catRes] = await Promise.all([
         fetch("/api/admin/products"),
-        fetch("/api/admin/categories"),
+        fetch("/api/admin/categories?flat=true"),
       ]);
 
       let loadedCats: CategoryData[] = [];
@@ -416,6 +416,7 @@ export default function AdminProductsPage() {
           name: newCatName.trim(),
           slug: slugVal,
           department,
+          parentId: categoryId ? categoryId : null,
         }),
       });
 

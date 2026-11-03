@@ -37,14 +37,14 @@ export function signJwtToken(user: SessionUser): string {
       role: user.role,
     },
     getAuthSecret(),
-    { expiresIn: "7d" }
+    { expiresIn: "7d", algorithm: "HS256" }
   );
 }
 
 export function verifyJwtToken(token: string): SessionUser | null {
   const secret = getAuthSecret();
   try {
-    const payload = jwt.verify(token, secret) as SessionUser;
+    const payload = jwt.verify(token, secret, { algorithms: ["HS256"] }) as SessionUser;
     return payload;
   } catch {
     return null;

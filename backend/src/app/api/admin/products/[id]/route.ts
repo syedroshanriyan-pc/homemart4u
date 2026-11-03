@@ -340,7 +340,17 @@ export async function DELETE(
     const hard = searchParams.get("hard") === "true";
 
     if (hard) {
-      // Hard delete (for removing test items)
+      // Hard delete: verify product does not have linked historical orders
+      const orderItemCount = await prisma.orderItem.count({ where: { productId: id } });
+      if (orderItemCount > 0) {
+        return NextResponse.json(
+          {
+            error: `Cannot permanently delete product: it is associated with ${orderItemCount} historical order item(s). Use soft deactivation instead to preserve order records.`,
+          },
+          { status: 400 }
+        );
+      }
+
       await prisma.productVariant.deleteMany({ where: { productId: id } });
       await prisma.customizationGroup.deleteMany({ where: { productId: id } });
       await prisma.product.delete({ where: { id } });

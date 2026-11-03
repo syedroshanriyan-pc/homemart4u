@@ -67,10 +67,16 @@ export async function POST(req: NextRequest) {
     const passwordHash = await hashPassword(password);
     const sanitizedAddr = sanitizeAddress(rawAddress);
 
-    const adminMobiles = (process.env.ADMIN_MOBILE || "7022461700,9844797374")
-      .split(",")
-      .map((m) => m.trim().replace(/\D/g, "").slice(-10));
-    const role = adminMobiles.includes(mobile.slice(-10)) ? "ADMIN" : "CUSTOMER";
+    let role: "ADMIN" | "CUSTOMER" = "CUSTOMER";
+    if (process.env.ADMIN_MOBILE && process.env.ADMIN_MOBILE.trim()) {
+      const adminMobiles = process.env.ADMIN_MOBILE
+        .split(",")
+        .map((m) => m.trim().replace(/\D/g, "").slice(-10))
+        .filter(Boolean);
+      if (adminMobiles.length > 0 && adminMobiles.includes(mobile.slice(-10))) {
+        role = "ADMIN";
+      }
+    }
 
     const user = await prisma.user.create({
       data: {

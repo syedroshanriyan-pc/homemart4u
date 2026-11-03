@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       data: {
         code: code.trim().toUpperCase(),
         type,
-        value: parseInt(value, 10) || 0,
+        value: Math.max(0, parseInt(value, 10) || 0),
         minimumOrderMinor: minOrderMinor,
         maximumDiscountMinor: maxDiscountMinor,
         freeDelivery: freeDelivery || type === "FREE_DELIVERY",

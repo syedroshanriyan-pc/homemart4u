@@ -36,7 +36,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const rawTitle = body.title;
     const rawMessage = body.message;
-    const targetUrl = body.targetUrl ? sanitizeText(body.targetUrl, 250) : null;
+    let targetUrl: string | null = null;
+    if (body.targetUrl) {
+      const trimmedUrl = String(body.targetUrl).trim();
+      if (trimmedUrl.startsWith("/") && !trimmedUrl.startsWith("//") && !trimmedUrl.toLowerCase().includes("javascript:")) {
+        targetUrl = trimmedUrl.slice(0, 250);
+      } else {
+        return NextResponse.json(
+          { error: "Target URL must be a relative internal path starting with '/'" },
+          { status: 400 }
+        );
+      }
+    }
 
     const title = sanitizeText(rawTitle, 120);
     const message = sanitizeText(rawMessage, 500);

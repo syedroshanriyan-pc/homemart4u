@@ -103,6 +103,7 @@ export async function POST(req: NextRequest) {
               "store_open_status",
               "STORE_OPEN",
               "store_closed_message",
+              "ORDER_ACCEPTANCE_ENABLED",
             ],
           },
         },
@@ -119,14 +120,16 @@ export async function POST(req: NextRequest) {
       (s) => s.key === "store_status" || s.key === "store_open_status" || s.key === "STORE_OPEN"
     );
     const storeClosedMsgSetting = systemSettings.find((s) => s.key === "store_closed_message");
+    const orderAcceptanceSetting = systemSettings.find((s) => s.key === "ORDER_ACCEPTANCE_ENABLED");
+    const isOrderAcceptanceDisabled = orderAcceptanceSetting?.value === "false";
     const isStoreClosed =
-      storeStatusSetting?.value === "CLOSED" || storeStatusSetting?.value === "false";
+      storeStatusSetting?.value === "CLOSED" || storeStatusSetting?.value === "false" || isOrderAcceptanceDisabled;
 
     if (isStoreClosed) {
-      errors.push(
-        storeClosedMsgSetting?.value?.trim() ||
-          "The store is currently closed. Ordering is temporarily unavailable."
-      );
+      const defaultMessage = isOrderAcceptanceDisabled
+        ? "Order acceptance is currently disabled by store administration."
+        : "The store is currently closed. Ordering is temporarily unavailable.";
+      errors.push(storeClosedMsgSetting?.value?.trim() || defaultMessage);
     }
 
     // Build O(1) lookup maps

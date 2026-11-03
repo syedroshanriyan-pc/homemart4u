@@ -283,20 +283,23 @@ export async function POST(req: NextRequest) {
         : Promise.resolve(null),
     ]);
 
-    // 4.1 Authoritatively enforce Store Status (Store Open / Store Closed)
+    // 4.1 Authoritatively enforce Store Status and Order Acceptance
     const storeStatusSetting = systemSettings.find(
       (s) => s.key === "store_status" || s.key === "store_open_status" || s.key === "STORE_OPEN"
     );
     const storeClosedMsgSetting = systemSettings.find((s) => s.key === "store_closed_message");
+    const orderAcceptanceSetting = systemSettings.find((s) => s.key === "ORDER_ACCEPTANCE_ENABLED");
+    const isOrderAcceptanceDisabled = orderAcceptanceSetting?.value === "false";
     const isStoreClosed =
-      storeStatusSetting?.value === "CLOSED" || storeStatusSetting?.value === "false";
+      storeStatusSetting?.value === "CLOSED" || storeStatusSetting?.value === "false" || isOrderAcceptanceDisabled;
 
     if (isStoreClosed) {
+      const defaultMessage = isOrderAcceptanceDisabled
+        ? "Order acceptance is currently disabled by store administration."
+        : "The store is currently closed. Please try again when we reopen.";
       return NextResponse.json(
         {
-          error:
-            storeClosedMsgSetting?.value?.trim() ||
-            "The store is currently closed. Please try again when we reopen.",
+          error: storeClosedMsgSetting?.value?.trim() || defaultMessage,
         },
         { status: 403 }
       );

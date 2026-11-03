@@ -14,6 +14,16 @@ async function verifyJwtInEdge(
     if (parts.length !== 3) return null;
     const [headerB64, payloadB64, signatureB64] = parts;
 
+    // Strict algorithm verification: must explicitly be HS256
+    try {
+      const headerPadded = headerB64.padEnd(headerB64.length + ((4 - (headerB64.length % 4)) % 4), "=");
+      const headerJson = atob(headerPadded.replace(/-/g, "+").replace(/_/g, "/"));
+      const headerObj = JSON.parse(headerJson);
+      if (headerObj.alg !== "HS256") return null;
+    } catch {
+      return null;
+    }
+
     // Convert secret string to key
     const encoder = new TextEncoder();
     const keyData = encoder.encode(secretStr);

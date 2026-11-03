@@ -12,12 +12,12 @@
 
 | Metric | Measured Value | Standard / Requirement | Status |
 | :--- | :--- | :--- | :---: |
-| **Total Automated Suites Tested** | **18 Suites** | Core Business, Security & UI Suites | **PASS** |
-| **Total Individual Test Cases** | **204 Test Cases** | 100% Passing Assertions | **PASS** |
+| **Total Automated Suites Tested** | **19 Suites** | Core Business, Security, UI & Cloudflare Framework Suites | **PASS** |
+| **Total Individual Test Cases** | **215 Test Cases** | 100% Passing Assertions | **PASS** |
 | **Failed Test Cases** | **0 Failures** | Zero regressions allowed | **PASS** |
 | **Frontend Production Build** | **49 / 49 Routes Compiled** | `next build` (Exit Code 0) | **PASS** |
 | **Backend Production Build** | **41 / 41 API Routes Compiled** | `next build` (Exit Code 0) | **PASS** |
-| **Prisma ORM Generation** | **v6.19.3 (518ms)** | Full schema synchronization | **PASS** |
+| **Prisma ORM Generation** | **v6.19.3 (477ms)** | Full schema synchronization | **PASS** |
 | **Security & RBAC Enforcement** | **100% Server-Side** | Zero client-side authority bypass | **PASS** |
 
 ---
@@ -449,6 +449,28 @@
 | 4 | custom error boundary pages error.tsx and global-error.tsx must exist with support contacts (1.4409ms) | **PASSED** |
 | 5 | customer order screen delivery timer must start ONLY after order is confirmed by admin (2.2228ms) | **PASSED** |
 | 6 | UPI Intent Apps, Auto-Webhook Status Detection, Custom Error Pages & Admin Confirmation Timer (15.9659ms) | **PASSED** |
+
+---
+
+### Suite 19: Cloudflare Security Audit & Vulnerability Hardening
+- **Source File:** `backend\tests\security-audit-fixes.test.mjs`
+- **Total Test Cases:** 11
+- **Duration:** 66ms
+- **Outcome:** **PASSED (100%)**
+
+| # | Test Case Description | Result |
+| :-: | :--- | :-: |
+| 1 | enforces explicit HS256 algorithm on jwt.verify to prevent algorithm confusion attacks (1.7691ms) | **PASSED** |
+| 2 | enforces explicit HS256 algorithm on jwt.sign (0.3957ms) | **PASSED** |
+| 3 | verifies header.alg is strictly HS256 in Edge runtime middleware (0.5053ms) | **PASSED** |
+| 4 | strictly defaults public registration role to CUSTOMER (0.4372ms) | **PASSED** |
+| 5 | does not contain hardcoded admin phone numbers in registration fallback (0.5878ms) | **PASSED** |
+| 6 | authoritatively checks ORDER_ACCEPTANCE_ENABLED in /api/orders and rejects when disabled (0.7786ms) | **PASSED** |
+| 7 | authoritatively checks ORDER_ACCEPTANCE_ENABLED in /api/cart/validate and invalidates cart (0.4644ms) | **PASSED** |
+| 8 | checks for associated historical OrderItem records before allowing hard delete (2.195ms) | **PASSED** |
+| 9 | enforces relative internal path validation and blocks javascript: or protocol-relative URLs (0.4686ms) | **PASSED** |
+| 10 | filters out expired coupons from public /api/coupons endpoint (0.99ms) | **PASSED** |
+| 11 | ensures coupon creation value cannot be negative (0.4845ms) | **PASSED** |
 
 ---
 

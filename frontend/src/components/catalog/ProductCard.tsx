@@ -208,9 +208,10 @@ export const ProductCard: React.FC<{
   const savingsRs = mrpNum > sellingNum ? mrpNum - sellingNum : 0;
   const saveTag = product.savePriceText || (savingsRs > 0 ? `Save ₹${savingsRs}` : null);
 
-  const primaryPrice = selectedVariant?.priceMinor
-    ? (selectedVariant.priceMinor / 100).toFixed(0)
-    : "0";
+  const hasValidPrice = Boolean(selectedVariant && selectedVariant.priceMinor && selectedVariant.priceMinor > 0);
+  const primaryPrice = hasValidPrice
+    ? (selectedVariant!.priceMinor / 100).toFixed(0)
+    : "";
 
   const isComingSoon = Boolean(
     product.badgeText?.toLowerCase().includes("coming soon") ||
@@ -369,24 +370,50 @@ export const ProductCard: React.FC<{
                 {selectedVariant?.name || "Today's Price"}
               </span>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-serif font-bold text-charcoal-700">
-                  ₹{primaryPrice}
-                </span>
-                {mrpNum > sellingNum && (
-                  <span className="text-xs text-charcoal-400 line-through">
-                    ₹{mrpNum}
-                  </span>
-                )}
-                {selectedVariant && (
-                  <span className="text-xs text-charcoal-400">
-                    / {selectedVariant.quantityUnit === "g" ? `${selectedVariant.quantityValue}g` : selectedVariant.name}
+                {hasValidPrice ? (
+                  <>
+                    <span className="text-lg font-serif font-bold text-charcoal-700">
+                      ₹{primaryPrice}
+                    </span>
+                    {mrpNum > sellingNum && (
+                      <span className="text-xs text-charcoal-400 line-through">
+                        ₹{mrpNum}
+                      </span>
+                    )}
+                    {selectedVariant && (
+                      <span className="text-xs text-charcoal-400">
+                        / {selectedVariant.quantityUnit === "g" ? `${selectedVariant.quantityValue}g` : selectedVariant.name}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-xs font-semibold text-charcoal-500">
+                    Price on Request
                   </span>
                 )}
               </div>
             </div>
 
             {/* Add to Cart CTA */}
-            {product.isAvailable ? (
+            {isComingSoon ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled
+                className="min-w-[95px] border-amber-300 bg-amber-50 text-amber-800 font-bold opacity-90 cursor-not-allowed text-[11px]"
+              >
+                <Clock className="w-3 h-3 mr-1 inline text-amber-600" />
+                Coming Soon
+              </Button>
+            ) : !product.isAvailable ? (
+              <Button variant="secondary" size="sm" disabled className="min-w-[80px]">
+                Sold Out
+              </Button>
+            ) : !hasValidPrice ? (
+              <Button variant="secondary" size="sm" disabled className="min-w-[80px] text-xs">
+                Unavailable
+              </Button>
+            ) : (
               <Button
                 variant={addedAnimation ? "secondary" : "primary"}
                 size="sm"
@@ -404,20 +431,6 @@ export const ProductCard: React.FC<{
                     <span>Add</span>
                   </>
                 )}
-              </Button>
-            ) : isComingSoon ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled
-                className="min-w-[95px] border-amber-300 bg-amber-50 text-amber-800 font-bold opacity-90 cursor-not-allowed text-[11px]"
-              >
-                <Clock className="w-3 h-3 mr-1 inline text-amber-600" />
-                Coming Soon
-              </Button>
-            ) : (
-              <Button variant="secondary" size="sm" disabled className="min-w-[80px]">
-                Sold Out
               </Button>
             )}
           </div>

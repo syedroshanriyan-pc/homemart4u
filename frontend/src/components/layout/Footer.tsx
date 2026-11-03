@@ -42,7 +42,7 @@ export const Footer: React.FC = () => {
                 Express Mulbagal Delivery
               </h4>
               <p className="text-xs text-charcoal-50 mt-1">
-                First 3 km free. Target delivery in approximately 20 minutes across town.
+                First 3 km free delivery across Mulbagal town with prompt doorstep fulfillment.
               </p>
             </div>
           </div>

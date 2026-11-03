@@ -21,6 +21,8 @@ export const PromotionalCarousel: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
 
   // 1. Fetch eligible published promotional cards (max 5 from backend)
   useEffect(() => {
@@ -67,6 +69,44 @@ export const PromotionalCarousel: React.FC = () => {
     setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
   }, [cards.length]);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches && e.touches.length > 0) {
+      touchStartX.current = e.touches[0].clientX;
+      touchEndX.current = e.touches[0].clientX;
+      setIsPaused(true);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches && e.touches.length > 0) {
+      touchEndX.current = e.touches[0].clientX;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current !== null && touchEndX.current !== null) {
+      const distance = touchStartX.current - touchEndX.current;
+      const isSwipeLeft = distance > 50;
+      const isSwipeRight = distance < -50;
+      if (isSwipeLeft) {
+        handleNext();
+      } else if (isSwipeRight) {
+        handlePrev();
+      }
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+    setIsPaused(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      handlePrev();
+    } else if (e.key === "ArrowRight") {
+      handleNext();
+    }
+  };
+
   // 4. Automatic 3-second rotation when multiple cards exist & not paused/reduced-motion
   useEffect(() => {
     if (cards.length <= 1 || isPaused || reducedMotion) {
@@ -98,11 +138,16 @@ export const PromotionalCarousel: React.FC = () => {
       role="region"
       aria-roledescription="carousel"
       aria-label="Promotional Offers & Announcements"
+      tabIndex={cards.length > 1 ? 0 : -1}
+      onKeyDown={handleKeyDown}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocus={() => setIsPaused(true)}
       onBlur={() => setIsPaused(false)}
-      className="relative w-full rounded-2xl bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 text-white shadow-sm border border-stone-800 overflow-hidden"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="relative w-full rounded-2xl bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 text-white shadow-sm border border-stone-800 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
     >
       <div className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         {/* Content Section: Starts naturally with actual headline & concise description */}

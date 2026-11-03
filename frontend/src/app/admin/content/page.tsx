@@ -53,6 +53,8 @@ export default function AdminContentCMSPage() {
     couponCode: "",
     status: "DRAFT",
     priority: 0,
+    startDate: "",
+    endDate: "",
   });
 
   const loadContent = async () => {
@@ -90,6 +92,8 @@ export default function AdminContentCMSPage() {
       couponCode: "",
       status: "DRAFT",
       priority: 0,
+      startDate: "",
+      endDate: "",
     });
     setIsModalOpen(true);
   };
@@ -106,6 +110,8 @@ export default function AdminContentCMSPage() {
       couponCode: item.couponCode || "",
       status: item.status,
       priority: item.priority,
+      startDate: item.startDate ? new Date(item.startDate).toISOString().slice(0, 16) : "",
+      endDate: item.endDate ? new Date(item.endDate).toISOString().slice(0, 16) : "",
     });
     setIsModalOpen(true);
   };
@@ -188,7 +194,7 @@ export default function AdminContentCMSPage() {
             Promotional Carousel &amp; Offers
           </h1>
           <p className="text-xs text-stone-500 mt-1 max-w-2xl">
-            Manage real-time homepage promotional cards. The top 5 highest-priority PUBLISHED cards rotate automatically every 1 second for customers.
+            Manage real-time homepage promotional cards. The top 5 highest-priority PUBLISHED cards rotate automatically every 3 seconds for customers with touch-swipe, pause on hover/focus, and reduced-motion support.
           </p>
         </div>
 
@@ -481,6 +487,32 @@ export default function AdminContentCMSPage() {
                     onChange={(e) => setFormData({ ...formData, ctaUrl: e.target.value })}
                     placeholder="/menu?cat=fresh-chicken"
                     className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Schedule Start Date (Optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none text-[11px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Expiry Date (Optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:outline-none text-[11px]"
                   />
                 </div>
               </div>

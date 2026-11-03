@@ -2,9 +2,9 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "homemart4u - Daily Groceries & Fresh Meat Mulbagal",
+    name: "homemart4u — Fresh Chicken & Farm Eggs Mulbagal",
     short_name: "homemart4u",
-    description: "Daily fresh 100% Halal chicken, precision cuts, and essential groceries delivered to your door in ~20 minutes in Mulbagal.",
+    description: "Farm-fresh chicken and quality eggs delivered to your door in Mulbagal with Cash on Delivery.",
     start_url: "/",
     display: "standalone",
     background_color: "#1c1917",

@@ -48,7 +48,7 @@ When you place an order on homemart4u:
 2. 100% Halal certified hand-slaughtered strictly per Islamic dietary standards.
 3. Cleaned with RO-purified water and cut with sterile surgical-grade blades.
 4. Sealed in double-layered temperature-protective food-grade packages.
-5. Handed directly to our delivery executive for express doorstep delivery in ~20 minutes.`,
+5. Handed directly to our delivery executive for express doorstep delivery across Mulbagal.`,
       imageUrl: "https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=800&q=80",
     },
     {
@@ -82,7 +82,7 @@ When you place an order on homemart4u:
 • Daily Farm Collection: Eggs are collected daily from verified local farms to preserve freshness and nutrition.
 • Graded & Clean-Shelled: Every egg is carefully inspected for intact shells and cleanliness.
 • Protective Packaging: Packed in secure, cushioned egg trays to prevent damage during transit.
-• Fast Doorstep Delivery: Delivered along with your fresh chicken cuts in ~20 minutes across Mulbagal.`,
+• Fast Doorstep Delivery: Delivered promptly along with your fresh chicken cuts across Mulbagal.`,
       imageUrl: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=800&q=80",
     },
   ];
@@ -108,7 +108,7 @@ When you place an order on homemart4u:
                 <span className="italic font-serif text-amber-300">
                   Farm Eggs,
                 </span>{" "}
-                Delivered in ~20 Minutes.
+                Delivered to Your Doorstep.
               </h1>
 
               <p className="text-sm sm:text-base text-stone-300 max-w-2xl leading-relaxed font-sans font-light">
@@ -177,7 +177,7 @@ When you place an order on homemart4u:
                   </div>
                   <div className="text-right">
                     <span className="text-xs text-stone-300">Hub Delivery</span>
-                    <p className="text-base font-bold text-emerald-400 font-serif">~20 Mins</p>
+                    <p className="text-base font-bold text-emerald-400 font-serif">Mulbagal</p>
                   </div>
                 </div>
               </div>
@@ -369,10 +369,10 @@ When you place an order on homemart4u:
                 <Truck className="w-5 h-5" />
               </div>
               <h3 className="font-serif text-base font-bold text-stone-900">
-                Express ~20-Minute Delivery
+                Express Local Delivery
               </h3>
               <p className="text-xs text-stone-500 leading-relaxed">
-                Positioned on Srinivaspur Road for rapid dispatch across Mulbagal city. First 3 km is 100% free delivery on every order.
+                Positioned on Srinivaspur Road for prompt dispatch across Mulbagal city. First 3 km is 100% free delivery on every order.
               </p>
             </div>
 
@@ -404,7 +404,7 @@ When you place an order on homemart4u:
           </h2>
 
           <p className="text-xs sm:text-sm text-stone-300 max-w-lg mx-auto">
-            Enjoy convenient Cash on Delivery and express ~20-minute doorstep delivery across Mulbagal.
+            Enjoy convenient Cash on Delivery and prompt doorstep delivery across Mulbagal.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-2">

@@ -14,9 +14,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "homemart4u - Daily Groceries & Fresh Meat | Srinivaspur Road, Mulbagal",
+  title: "homemart4u — Fresh Chicken & Farm Eggs | Srinivaspur Road, Mulbagal",
   description:
-    "Order 100% farm fresh chicken & daily groceries online from homemart4u in Mulbagal. Free delivery for first 3km, ~20-minute delivery from Srinivaspur Road, custom curry/biryani cuts, dynamic UPI QR payments, and COD available.",
+    "Order farm-fresh chicken and quality eggs online from homemart4u in Mulbagal. Daily fresh cuts prepared to order, doorstep delivery from Srinivaspur Road, and Cash on Delivery (COD) available.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -32,12 +32,12 @@ export const metadata: Metadata = {
     "homemart4u",
     "homemart4u Mulbagal",
     "Fresh Chicken Mulbagal",
-    "Groceries Mulbagal",
+    "Farm Eggs Mulbagal",
     "Srinivaspur Road Mulbagal",
     "Fresh Meat Mulbagal",
     "Buy Chicken Online Mulbagal",
-    "Farm Fresh Chicken Karnataka",
-    "Curry Cut Chicken Mulbagal",
+    "Chicken Cuts Mulbagal",
+    "Desi Eggs Mulbagal",
   ],
   metadataBase: (() => {
     const raw = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || "https://homemart4u.in";
@@ -50,11 +50,12 @@ export const metadata: Metadata = {
     }
   })(),
   openGraph: {
-    title: "homemart4u | Groceries & Fresh Meat Mulbagal",
-    description: "Premium fresh chicken and daily groceries delivered to your doorstep in Mulbagal from Srinivaspur Road in ~20 minutes.",
+    title: "homemart4u | Fresh Chicken & Eggs Mulbagal",
+    description: "Farm-fresh chicken and quality eggs delivered to your doorstep in Mulbagal from Srinivaspur Road.",
     type: "website",
     locale: "en_IN",
     siteName: "homemart4u",
+    url: "https://homemart4u.in",
   },
 };
 
@@ -65,10 +66,11 @@ export default function RootLayout({
 }) {
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "GroceryStore",
+    "@type": "LocalBusiness",
     name: "homemart4u",
+    url: "https://homemart4u.in",
     description:
-      "Daily fresh tender chicken, customizable halal cuts, farm eggs, and essential groceries with express delivery in Mulbagal.",
+      "Daily fresh chicken, customizable cuts, and farm eggs with local doorstep delivery in Mulbagal.",
     address: {
       "@type": "PostalAddress",
       streetAddress: "Srinivaspur Road",
@@ -83,7 +85,6 @@ export default function RootLayout({
       longitude: 78.3952,
     },
     telephone: "+919035526638",
-    openingHours: "Mo-Su 08:30-19:00",
     priceRange: "₹₹",
   };
 

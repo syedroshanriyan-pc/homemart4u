@@ -311,17 +311,25 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
                 Today&apos;s Effective Price
               </span>
               <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="font-serif text-3xl font-bold text-charcoal-700">
-                  ₹{(isNaN(unitTotalRs) || !isFinite(unitTotalRs) ? 0 : unitTotalRs).toFixed(0)}
-                </span>
-                {mrpNum > unitTotalRs && (
-                  <span className="text-sm text-charcoal-400 line-through">
-                    ₹{mrpNum}
+                {selectedVariant && selectedVariant.priceMinor > 0 && unitTotalRs > 0 ? (
+                  <>
+                    <span className="font-serif text-3xl font-bold text-charcoal-700">
+                      ₹{(isNaN(unitTotalRs) || !isFinite(unitTotalRs) ? 0 : unitTotalRs).toFixed(0)}
+                    </span>
+                    {mrpNum > unitTotalRs && (
+                      <span className="text-sm text-charcoal-400 line-through">
+                        ₹{mrpNum}
+                      </span>
+                    )}
+                    <span className="text-xs text-charcoal-500">
+                      / {selectedVariant.name}
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-serif text-2xl font-bold text-charcoal-600">
+                    Price on Request
                   </span>
                 )}
-                <span className="text-xs text-charcoal-500">
-                  / {selectedVariant?.name || "Standard"}
-                </span>
               </div>
             </div>
             <span className="text-[11px] text-charcoal-400">
@@ -553,7 +561,25 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
               </div>
 
               {/* Add to Cart CTA */}
-              {currentProduct.isAvailable ? (
+              {isComingSoon ? (
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  disabled
+                  className="flex-1 border-amber-300 bg-amber-50 text-amber-900 font-bold opacity-90 cursor-not-allowed"
+                >
+                  <Clock className="w-4 h-4 mr-2 text-amber-600 inline" />
+                  Coming Soon &mdash; Launching Shortly
+                </Button>
+              ) : !currentProduct.isAvailable ? (
+                <Button variant="secondary" size="lg" disabled className="flex-1">
+                  Product Sold Out Today
+                </Button>
+              ) : !selectedVariant || selectedVariant.priceMinor <= 0 ? (
+                <Button variant="secondary" size="lg" disabled className="flex-1">
+                  Unavailable &mdash; Price on Request
+                </Button>
+              ) : (
                 <Button
                   variant={added ? "secondary" : "primary"}
                   size="lg"
@@ -570,20 +596,6 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
                       <span>Add to Cart &bull; ₹{(unitTotalRs * quantity).toFixed(0)}</span>
                     </>
                   )}
-                </Button>
-              ) : isComingSoon ? (
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  disabled
-                  className="flex-1 border-amber-300 bg-amber-50 text-amber-900 font-bold opacity-90 cursor-not-allowed"
-                >
-                  <Clock className="w-4 h-4 mr-2 text-amber-600 inline" />
-                  Coming Soon &mdash; Launching Shortly
-                </Button>
-              ) : (
-                <Button variant="secondary" size="lg" disabled className="flex-1">
-                  Product Sold Out Today
                 </Button>
               )}
             </div>

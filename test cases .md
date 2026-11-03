@@ -12,12 +12,12 @@
 
 | Metric | Measured Value | Standard / Requirement | Status |
 | :--- | :--- | :--- | :---: |
-| **Total Automated Suites Tested** | **19 Suites** | Core Business, Security, UI & Cloudflare Framework Suites | **PASS** |
-| **Total Individual Test Cases** | **215 Test Cases** | 100% Passing Assertions | **PASS** |
+| **Total Automated Suites Tested** | **20 Suites** | Core Business, Security, UI, Cloudflare Framework & Catalogue Suites | **PASS** |
+| **Total Individual Test Cases** | **228 Test Cases** | 100% Passing Assertions | **PASS** |
 | **Failed Test Cases** | **0 Failures** | Zero regressions allowed | **PASS** |
 | **Frontend Production Build** | **49 / 49 Routes Compiled** | `next build` (Exit Code 0) | **PASS** |
 | **Backend Production Build** | **41 / 41 API Routes Compiled** | `next build` (Exit Code 0) | **PASS** |
-| **Prisma ORM Generation** | **v6.19.3 (477ms)** | Full schema synchronization | **PASS** |
+| **Prisma ORM Generation** | **v6.19.3 (584ms)** | Full schema synchronization | **PASS** |
 | **Security & RBAC Enforcement** | **100% Server-Side** | Zero client-side authority bypass | **PASS** |
 
 ---
@@ -471,6 +471,30 @@
 | 9 | enforces relative internal path validation and blocks javascript: or protocol-relative URLs (0.4686ms) | **PASSED** |
 | 10 | filters out expired coupons from public /api/coupons endpoint (0.99ms) | **PASSED** |
 | 11 | ensures coupon creation value cannot be negative (0.4845ms) | **PASSED** |
+
+---
+
+### Suite 20: Production Corrections, Product Catalogue & Promotional Cards
+- **Source File:** `backend\tests\production-corrections-and-catalogue.test.mjs`
+- **Total Test Cases:** 13
+- **Duration:** 43ms
+- **Outcome:** **PASSED (100%)**
+
+| # | Test Case Description | Result |
+| :-: | :--- | :-: |
+| 1 | frontend/src/app/layout.tsx must identify as Fresh Chicken & Farm Eggs, not general groceries (2.04ms) | **PASSED** |
+| 2 | frontend/src/app/manifest.ts must feature Fresh Chicken & Farm Eggs without grocery references (1.17ms) | **PASSED** |
+| 3 | frontend/src/components/layout/Footer.tsx must not contain unverified delivery time claims (0.86ms) | **PASSED** |
+| 4 | frontend/src/components/home/LandingBlogView.tsx must remove unverified delivery promises (0.96ms) | **PASSED** |
+| 5 | ProductCard must not display ₹0 or allow purchasing unconfigured products (1.06ms) | **PASSED** |
+| 6 | ProductDetailClient must not display ₹0 or allow adding unconfigured products to cart (1.10ms) | **PASSED** |
+| 7 | PromotionalCarousel must support touch swipe navigation and keyboard accessibility (2.40ms) | **PASSED** |
+| 8 | backend/src/app/api/admin/content/[id]/route.ts must export both PUT and PATCH methods (0.79ms) | **PASSED** |
+| 9 | frontend/src/app/admin/content/page.tsx must provide schedule date inputs and live preview (1.03ms) | **PASSED** |
+| 10 | backend/prisma/bootstrap-catalogue.cjs must define all 7 required chicken products (1.48ms) | **PASSED** |
+| 11 | backend/prisma/bootstrap-catalogue.cjs must define both required egg products (0.96ms) | **PASSED** |
+| 12 | backend/prisma/bootstrap-catalogue.cjs must maintain Mutton and Fish as Coming Soon (1.29ms) | **PASSED** |
+| 13 | backend/prisma/bootstrap-catalogue.cjs must define the 5 published promotional cards (0.71ms) | **PASSED** |
 
 ---
 

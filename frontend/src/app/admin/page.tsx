@@ -21,6 +21,12 @@ import {
   QrCode,
   ShieldCheck,
   CreditCard,
+  Layers,
+  Store,
+  Tag,
+  CheckCircle,
+  XCircle,
+  Package,
 } from "lucide-react";
 import { useRealTime } from "@/lib/useRealTime";
 
@@ -190,6 +196,162 @@ export default function AdminDashboardPage() {
         >
           {(metrics.store_status || "OPEN") === "OPEN" ? "Close Store Now" : "Open Store Now"}
         </button>
+      </div>
+
+      {/* Real-Time Catalogue & Storefront Management Overview (8 Metrics Grid) */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs uppercase font-bold tracking-wider text-charcoal-500">
+            Storefront &amp; Catalogue Overview
+          </h2>
+          <span className="text-[11px] text-charcoal-400 font-mono">
+            Direct from PostgreSQL
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5">
+          {/* Total Products */}
+          <Link
+            href="/admin/products"
+            className="bg-white p-4 rounded-2xl border border-cream-200 shadow-subtle hover:border-cream-300 transition block group"
+          >
+            <div className="flex items-center justify-between text-charcoal-400 mb-1.5">
+              <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider text-charcoal-600">Total Products</span>
+              <Package className="w-4 h-4 text-charcoal-500 group-hover:text-amberGold-600 transition" />
+            </div>
+            <span className="font-serif text-2xl font-bold text-charcoal-900 block">
+              {metrics.totalProducts ?? 0}
+            </span>
+            <span className="text-[10px] text-charcoal-400 mt-0.5 block truncate">
+              {metrics.activeProducts ?? 0} active in catalogue
+            </span>
+          </Link>
+
+          {/* Available Products */}
+          <Link
+            href="/admin/products"
+            className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200/80 shadow-subtle hover:border-emerald-300 transition block group"
+          >
+            <div className="flex items-center justify-between text-emerald-700 mb-1.5">
+              <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Available (In Stock)</span>
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
+            </div>
+            <span className="font-serif text-2xl font-bold text-emerald-900 block">
+              {metrics.availableProducts ?? 0}
+            </span>
+            <span className="text-[10px] text-emerald-700 mt-0.5 block truncate">
+              Ready for immediate order
+            </span>
+          </Link>
+
+          {/* Unavailable Products */}
+          <Link
+            href="/admin/products"
+            className="bg-rose-50/50 p-4 rounded-2xl border border-rose-200/80 shadow-subtle hover:border-rose-300 transition block group"
+          >
+            <div className="flex items-center justify-between text-rose-700 mb-1.5">
+              <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Unavailable Items</span>
+              <XCircle className="w-4 h-4 text-rose-600" />
+            </div>
+            <span className="font-serif text-2xl font-bold text-rose-900 block">
+              {metrics.unavailableProducts ?? 0}
+            </span>
+            <span className="text-[10px] text-rose-700 mt-0.5 block truncate">
+              {metrics.outOfStockProductsCount ?? 0} marked out of stock
+            </span>
+          </Link>
+
+          {/* Total Categories */}
+          <Link
+            href="/admin/categories"
+            className="bg-white p-4 rounded-2xl border border-cream-200 shadow-subtle hover:border-cream-300 transition block group"
+          >
+            <div className="flex items-center justify-between text-charcoal-400 mb-1.5">
+              <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider text-charcoal-600">Total Categories</span>
+              <Layers className="w-4 h-4 text-amberGold-600 group-hover:scale-105 transition" />
+            </div>
+            <span className="font-serif text-2xl font-bold text-charcoal-900 block">
+              {metrics.totalCategories ?? 0}
+            </span>
+            <span className="text-[10px] text-charcoal-400 mt-0.5 block truncate">
+              Meat &amp; Grocery departments
+            </span>
+          </Link>
+
+          {/* Active Promotional Cards */}
+          <Link
+            href="/admin/content"
+            className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/80 shadow-subtle hover:border-amber-300 transition block group"
+          >
+            <div className="flex items-center justify-between text-amber-700 mb-1.5">
+              <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Promo Cards</span>
+              <Tag className="w-4 h-4 text-amber-600" />
+            </div>
+            <span className="font-serif text-2xl font-bold text-amber-900 block">
+              {metrics.activePromotionalCards ?? 0}
+            </span>
+            <span className="text-[10px] text-amber-700 mt-0.5 block truncate">
+              Published on customer homepage
+            </span>
+          </Link>
+
+          {/* Store Operating Status */}
+          <Link
+            href="/admin/settings"
+            className="bg-white p-4 rounded-2xl border border-cream-200 shadow-subtle hover:border-cream-300 transition block group"
+          >
+            <div className="flex items-center justify-between text-charcoal-400 mb-1.5">
+              <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider text-charcoal-600">Store Status</span>
+              <Store className="w-4 h-4 text-charcoal-500" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${
+                (metrics.store_status || "OPEN") === "OPEN" ? "bg-emerald-600 animate-pulse" : "bg-rose-600"
+              }`} />
+              <span className={`font-serif text-xl sm:text-2xl font-bold ${
+                (metrics.store_status || "OPEN") === "OPEN" ? "text-emerald-700" : "text-rose-700"
+              }`}>
+                {metrics.store_status || "OPEN"}
+              </span>
+            </div>
+            <span className="text-[10px] text-charcoal-400 mt-0.5 block truncate">
+              {(metrics.store_status || "OPEN") === "OPEN" ? "Accepting customer orders" : "Ordering paused"}
+            </span>
+          </Link>
+
+          {/* Pending Orders */}
+          <Link
+            href="/admin/orders?status=PENDING"
+            className="bg-blue-50/50 p-4 rounded-2xl border border-blue-200/80 shadow-subtle hover:border-blue-300 transition block group"
+          >
+            <div className="flex items-center justify-between text-blue-700 mb-1.5">
+              <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Pending Orders</span>
+              <Clock className="w-4 h-4 text-blue-600" />
+            </div>
+            <span className="font-serif text-2xl font-bold text-blue-900 block">
+              {metrics.pendingOrders ?? metrics.pendingDeliveries ?? 0}
+            </span>
+            <span className="text-[10px] text-blue-700 mt-0.5 block truncate">
+              Placed, preparing or in transit
+            </span>
+          </Link>
+
+          {/* Delivered Orders */}
+          <Link
+            href="/admin/orders?status=DELIVERED"
+            className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200/80 shadow-subtle hover:border-emerald-300 transition block group"
+          >
+            <div className="flex items-center justify-between text-emerald-700 mb-1.5">
+              <span className="text-[10px] sm:text-[11px] uppercase font-bold tracking-wider">Delivered Orders</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            </div>
+            <span className="font-serif text-2xl font-bold text-emerald-900 block">
+              {metrics.completedOrders ?? metrics.deliveredOrders ?? 0}
+            </span>
+            <span className="text-[10px] text-emerald-700 mt-0.5 block truncate">
+              Successfully fulfilled
+            </span>
+          </Link>
+        </div>
       </div>
 
       {/* 1. Core KPI Metric Cards (Strictly Persisted Delivery Collections & Live Metrics) */}

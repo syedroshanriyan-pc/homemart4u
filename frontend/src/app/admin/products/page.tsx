@@ -970,10 +970,10 @@ export default function AdminProductsPage() {
       <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
           {/* Department Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl self-start">
+          <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl self-start overflow-x-auto max-w-full">
             <button
               onClick={() => setDeptFilter("ALL")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center ${
                 deptFilter === "ALL" ? "bg-white text-stone-900 shadow-2xs" : "text-stone-600 hover:text-stone-900"
               }`}
             >
@@ -981,7 +981,7 @@ export default function AdminProductsPage() {
             </button>
             <button
               onClick={() => setDeptFilter("MEAT")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center ${
                 deptFilter === "MEAT" ? "bg-white text-stone-900 shadow-2xs" : "text-stone-600 hover:text-stone-900"
               }`}
             >
@@ -989,7 +989,7 @@ export default function AdminProductsPage() {
             </button>
             <button
               onClick={() => setDeptFilter("GROCERY")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center ${
                 deptFilter === "GROCERY" ? "bg-white text-stone-900 shadow-2xs" : "text-stone-600 hover:text-stone-900"
               }`}
             >
@@ -1005,7 +1005,7 @@ export default function AdminProductsPage() {
               placeholder="Search products or slug..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-400/50"
+              className="w-full min-h-[44px] pl-9 pr-3 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-400/50"
             />
           </div>
         </div>
@@ -1024,7 +1024,111 @@ export default function AdminProductsPage() {
             <p className="text-stone-400">Try adjusting your filters or click "Add New Product".</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* 1. Mobile-First Card View (Visible on screens < 768px) */}
+            <div className="block md:hidden divide-y divide-stone-100">
+              {filteredProducts.map((p) => {
+                const firstVariant = p.variants?.[0];
+                const priceRs = firstVariant ? (firstVariant.priceMinor / 100).toFixed(0) : "0";
+                const isMeat = p.category?.department === "MEAT";
+
+                return (
+                  <div key={p.id} className="p-4 space-y-3">
+                    {/* Top Row: Thumbnail + Title + Department */}
+                    <div className="flex items-start gap-3">
+                      <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0 border border-stone-200">
+                        {p.imageUrl ? (
+                          <Image src={p.imageUrl} alt={p.name} fill className="object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] text-stone-400">
+                            No Img
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                            isMeat ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"
+                          }`}>
+                            {isMeat ? "🥩 Meat" : "🛒 Grocery"}
+                          </span>
+                          <span className="text-[11px] text-stone-500 font-medium truncate">
+                            {p.category?.name}
+                          </span>
+                        </div>
+                        <h3 className="font-semibold text-stone-900 text-sm line-clamp-1 mt-0.5">{p.name}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="font-mono font-bold text-sm text-stone-900">
+                            ₹{priceRs}
+                          </span>
+                          <span className="text-[10px] text-stone-500">
+                            ({p.variants?.length || 0} portions)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Badges & Portions */}
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                      <FoodTypeBadge type={p.foodType || (isMeat ? "NON_VEG" : "VEG")} showLabel={true} size="sm" />
+                      {isMeat && Boolean(p.isHalal) && (
+                        <HalalBadge size="sm" variant="outline" />
+                      )}
+                      {p.variants && p.variants.length > 0 && (
+                        <span className="text-[10px] text-stone-500 font-mono">
+                          {p.variants.map((v) => v.name).join(", ")}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Stock Status & Actions (Touch Targets >= 44px) */}
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-stone-100">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStock(p.id)}
+                        className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center cursor-pointer ${
+                          p.isAvailable
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100"
+                            : "bg-stone-200 text-stone-600 border border-stone-300 hover:bg-stone-300"
+                        }`}
+                      >
+                        {p.isAvailable ? "✓ IN STOCK" : "✕ SOLD OUT"}
+                      </button>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openVariantsModal(p)}
+                          className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition flex items-center justify-center cursor-pointer"
+                          title="Manage Variants"
+                        >
+                          <SlidersHorizontal className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(p)}
+                          className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-200 transition flex items-center justify-center cursor-pointer"
+                          title="Edit Product"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProduct(p)}
+                          className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition flex items-center justify-center cursor-pointer"
+                          title="Delete Product"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 2. Desktop Table View (Visible on screens >= 768px) */}
+            <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-stone-50 border-b border-stone-200 text-stone-500 font-semibold uppercase tracking-wider text-[10px]">
@@ -1165,6 +1269,7 @@ export default function AdminProductsPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

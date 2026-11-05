@@ -34,12 +34,25 @@ const ALLOWED_SETTING_KEYS = new Set([
   "shop_email",
   "shop_latitude",
   "shop_longitude",
+  "support_phone",
+  "store_opening_hours",
+  "store_closing_hours",
+  "store_reopening_info",
+  "shop_logo_url",
   "store_status",
   "store_open_status",
   "store_closed_message",
+  "order_acceptance_enabled",
+  "delivery_radius_km",
   "free_delivery_radius_meters",
+  "base_delivery_fee_paise",
   "delivery_rate_per_100m_paise",
+  "free_delivery_threshold_paise",
+  "min_order_amount_paise",
+  "delivery_available",
+  "cod_available",
   "cod_surcharge_paise",
+  "order_instructions",
   "minimum_order_meat_grams",
   "FREE_DELIVERY_METERS",
   "DELIVERY_RATE_PER_100M_PAISE",
@@ -127,7 +140,7 @@ export async function POST(req: NextRequest) {
         update: { value, updatedAt: new Date() },
       });
 
-      // Keep shop_name and SHOP_NAME synchronized for cross-compatibility
+      // Keep aliases synchronized for cross-compatibility
       if (key === "shop_name") {
         await prisma.systemSetting.upsert({
           where: { key: "SHOP_NAME" },
@@ -139,6 +152,25 @@ export async function POST(req: NextRequest) {
           where: { key: "shop_name" },
           create: { key: "shop_name", value },
           update: { value, updatedAt: new Date() },
+        });
+      } else if (key === "order_acceptance_enabled") {
+        await prisma.systemSetting.upsert({
+          where: { key: "ORDER_ACCEPTANCE_ENABLED" },
+          create: { key: "ORDER_ACCEPTANCE_ENABLED", value },
+          update: { value, updatedAt: new Date() },
+        });
+      } else if (key === "ORDER_ACCEPTANCE_ENABLED") {
+        await prisma.systemSetting.upsert({
+          where: { key: "order_acceptance_enabled" },
+          create: { key: "order_acceptance_enabled", value },
+          update: { value, updatedAt: new Date() },
+        });
+      } else if (key === "store_status" || key === "store_open_status") {
+        const isClosed = value === "CLOSED" || value === "false";
+        await prisma.systemSetting.upsert({
+          where: { key: "STORE_OPEN" },
+          create: { key: "STORE_OPEN", value: isClosed ? "false" : "true" },
+          update: { value: isClosed ? "false" : "true", updatedAt: new Date() },
         });
       }
     }

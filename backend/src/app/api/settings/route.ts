@@ -35,6 +35,19 @@ const PUBLIC_ALLOWED_SETTING_KEYS = new Set([
   "ESTIMATED_DELIVERY_MINUTES",
   "EMERGENCY_NOTICE",
   "ORDER_ACCEPTANCE_ENABLED",
+  "order_acceptance_enabled",
+  "support_phone",
+  "store_opening_hours",
+  "store_closing_hours",
+  "store_reopening_info",
+  "delivery_radius_km",
+  "base_delivery_fee_paise",
+  "free_delivery_threshold_paise",
+  "min_order_amount_paise",
+  "delivery_available",
+  "cod_available",
+  "order_instructions",
+  "shop_logo_url",
 ]);
 
 export async function GET() {

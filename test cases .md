@@ -498,6 +498,35 @@
 
 ---
 
+### Suite 21: Complete Admin Control, Dynamic Configuration & Mobile-First Responsive Design
+- **Source File:** `backend\tests\admin-control-and-mobile-responsive.test.mjs`
+- **Total Test Cases:** 18
+- **Duration:** 23ms
+- **Outcome:** **PASSED (100%)**
+
+| # | Test Case Description | Result |
+| :-: | :--- | :-: |
+| 1 | must permit all required business information settings (shop_name, phone, support, hours, logo, lat/lng) (5.38ms) | **PASSED** |
+| 2 | must permit all store operation and availability settings (store_status, open_status, closure msg, reopening, order acceptance) (0.60ms) | **PASSED** |
+| 3 | must permit all delivery configuration settings (radius, fees, threshold, rate per 100m, min order) (0.63ms) | **PASSED** |
+| 4 | must permit all checkout policy and payment settings (cod_available, surcharge, instructions, UPI VPA & name) (0.77ms) | **PASSED** |
+| 5 | must reject unknown setting keys with standard 400 error message (0.61ms) | **PASSED** |
+| 6 | must enforce shop_name length validation between 2 and 100 characters (0.53ms) | **PASSED** |
+| 7 | must automatically synchronize operational aliases (shop_name, order_acceptance_enabled, store_status) (0.48ms) | **PASSED** |
+| 8 | must verify session user and enforce exact ADMIN role for setting changes (0.59ms) | **PASSED** |
+| 9 | must record audit logs for setting modifications (0.73ms) | **PASSED** |
+| 10 | must safely expose public settings while protecting internal secrets (1.03ms) | **PASSED** |
+| 11 | must query real product, category, promo card and order counts from PostgreSQL (0.49ms) | **PASSED** |
+| 12 | must render the 8-card responsive overview grid with grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 (0.61ms) | **PASSED** |
+| 13 | must structure configuration into 4 distinct, navigable sections (0.75ms) | **PASSED** |
+| 14 | must implement minimum 44px touch targets on interactive controls for mobile (0.57ms) | **PASSED** |
+| 15 | must provide mobile-first card view on small screens and desktop table on large screens for Orders (0.29ms) | **PASSED** |
+| 16 | must provide touch-friendly min 44px buttons for filters, search and actions in Orders (0.23ms) | **PASSED** |
+| 17 | must provide mobile-first card view on small screens and desktop table on large screens for Products (0.36ms) | **PASSED** |
+| 18 | must provide touch-friendly min 44px action buttons for stock toggle and management in Products (0.34ms) | **PASSED** |
+
+---
+
 ## 4. Production Build Verification Logs
 
 ### 4.1 Frontend Build Output (`npm run build:frontend`)

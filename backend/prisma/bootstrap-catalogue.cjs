@@ -350,6 +350,75 @@ async function main() {
 
     // --- 2 EGG PRODUCTS ---
     {
+      name: "Pure Country Desi Nati Eggs",
+      slug: "pure-country-desi-nati-eggs",
+      categorySlug: "eggs",
+      description: "Authentic country-sourced Desi / Nati eggs with natural brown shells and rich golden yolks. Sourced from local free-range poultry.",
+      productType: "QUANTITY",
+      foodType: "EGG",
+      isHalal: true,
+      isActive: true,
+      isAvailable: true,
+      imageUrl: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=800&q=80",
+      seoTitle: "Pure Country Desi Nati Eggs | HomeMart4U Mulbagal",
+      seoDescription: "Buy natural Desi Nati Eggs in Mulbagal. Country-sourced, fresh brown eggs in protective pack.",
+      mrpMinor: 43000,
+      savePriceText: "Save ₹50",
+      badgeText: "Country Desi • Nati",
+      displayOrder: 8,
+      variants: [
+        { name: "6 eggs", pricingType: "QUANTITY", quantityValue: 6, quantityUnit: "eggs", priceMinor: 8000, mrpMinor: 9500, isAvailable: true },
+        { name: "12 eggs", pricingType: "QUANTITY", quantityValue: 12, quantityUnit: "eggs", priceMinor: 15500, mrpMinor: 18000, isAvailable: true },
+        { name: "30 eggs", pricingType: "QUANTITY", quantityValue: 30, quantityUnit: "eggs", priceMinor: 38000, mrpMinor: 43000, isAvailable: true },
+      ],
+      customizationGroups: [],
+    },
+    {
+      name: "Fresh Tender Chicken Curry Cut",
+      slug: "fresh-tender-chicken-curry-cut",
+      categorySlug: "fresh-chicken",
+      description: "Farm-fresh tender chicken curry cut portions prepared cleanly to order. 100% Halal certified.",
+      productType: "WEIGHT",
+      foodType: "NON_VEG",
+      isHalal: true,
+      isActive: true,
+      isAvailable: true,
+      imageUrl: "https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=800&q=80",
+      seoTitle: "Fresh Tender Chicken Curry Cut | HomeMart4U",
+      seoDescription: "Order fresh chicken curry cut portions with your choice of skin and cut size.",
+      mrpMinor: 30000,
+      savePriceText: "Save ₹40",
+      badgeText: "Curry Cut Special",
+      displayOrder: 9,
+      variants: [
+        { name: "500g", pricingType: "WEIGHT", quantityValue: 500, quantityUnit: "g", priceMinor: 14000, mrpMinor: 16000, isAvailable: true },
+        { name: "1kg", pricingType: "WEIGHT", quantityValue: 1000, quantityUnit: "g", priceMinor: 26000, mrpMinor: 30000, isAvailable: true },
+      ],
+      customizationGroups: [
+        {
+          name: "Skin Preference",
+          selectionType: "SINGLE",
+          isRequired: true,
+          displayOrder: 1,
+          options: [
+            { name: "Skin Removed", priceDeltaMinor: 0, displayOrder: 1, isActive: true },
+            { name: "Skin On", priceDeltaMinor: 0, displayOrder: 2, isActive: true },
+          ],
+        },
+        {
+          name: "Cutting Size",
+          selectionType: "SINGLE",
+          isRequired: true,
+          displayOrder: 2,
+          options: [
+            { name: "Medium Cut", priceDeltaMinor: 0, displayOrder: 1, isActive: true },
+            { name: "Small Cut", priceDeltaMinor: 0, displayOrder: 2, isActive: true },
+            { name: "Large Cut", priceDeltaMinor: 0, displayOrder: 3, isActive: true },
+          ],
+        },
+      ],
+    },
+    {
       name: "Desi Eggs",
       slug: "desi-eggs",
       categorySlug: "eggs",
@@ -604,3 +673,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+

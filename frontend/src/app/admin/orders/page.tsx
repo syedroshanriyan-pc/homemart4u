@@ -18,6 +18,10 @@ import {
   Banknote,
   Calendar,
   Sparkles,
+  User,
+  Phone,
+  Package,
+  ChevronRight,
 } from "lucide-react";
 
 export default function AdminOrdersListPage() {
@@ -124,7 +128,7 @@ export default function AdminOrdersListPage() {
             <span>Past 2 Days Active Records &bull; Older Records Auto-Purged</span>
           </div>
           <h1 className="font-serif text-2xl font-bold text-stone-800">
-            Order & Payment Management
+            Order &amp; Payment Management
           </h1>
           <p className="text-xs text-stone-500 mt-0.5">
             Real-time live monitoring of customer orders, dynamic UPI QR/app transactions, and delivery fulfillment.
@@ -136,7 +140,7 @@ export default function AdminOrdersListPage() {
             variant="outline"
             size="sm"
             onClick={fetchOrders}
-            className="text-xs flex items-center gap-1.5"
+            className="min-h-[44px] text-xs flex items-center gap-1.5 px-3 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh</span>
@@ -147,7 +151,7 @@ export default function AdminOrdersListPage() {
             size="sm"
             onClick={handleManualPurge}
             isLoading={isPurging}
-            className="text-xs text-rose-700 border-rose-300 hover:bg-rose-50 flex items-center gap-1.5"
+            className="min-h-[44px] text-xs text-rose-700 border-rose-300 hover:bg-rose-50 flex items-center gap-1.5 px-3 cursor-pointer"
             title="Clean records older than 48 hours"
           >
             <Trash2 className="w-3.5 h-3.5 text-rose-600" />
@@ -262,13 +266,13 @@ export default function AdminOrdersListPage() {
                 <button
                   key={pf.key}
                   onClick={() => setSelectedPaymentStatus(pf.key)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
                     selectedPaymentStatus === pf.key
                       ? "bg-stone-800 text-white shadow-sm"
                       : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-4 h-4" />
                   <span>{pf.label}</span>
                 </button>
               );
@@ -286,7 +290,7 @@ export default function AdminOrdersListPage() {
               <button
                 key={f.key}
                 onClick={() => setSelectedStatus(f.key)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center cursor-pointer ${
                   selectedStatus === f.key
                     ? "bg-amber-600 text-white font-semibold shadow-sm"
                     : "bg-stone-50 text-stone-600 hover:bg-stone-100 border border-stone-200"
@@ -307,16 +311,16 @@ export default function AdminOrdersListPage() {
               placeholder="Search by order number (FC-1001), customer, phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full min-h-[44px] pl-10 pr-4 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
-          <Button type="submit" variant="primary" size="sm">
+          <Button type="submit" variant="primary" size="sm" className="min-h-[44px] px-4 cursor-pointer">
             Search
           </Button>
         </form>
       </div>
 
-      {/* Orders Table */}
+      {/* Orders Container (Mobile Stacked Cards + Desktop Table) */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-subtle overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-xs text-stone-400">
@@ -334,169 +338,280 @@ export default function AdminOrdersListPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-stone-200 bg-stone-50 text-[11px] uppercase text-stone-500 font-semibold">
-                  <th className="py-3.5 px-4">Order #</th>
-                  <th className="py-3.5 px-4">Time Placed</th>
-                  <th className="py-3.5 px-4">Customer</th>
-                  <th className="py-3.5 px-4">Items</th>
-                  <th className="py-3.5 px-4">Amount & Method</th>
-                  <th className="py-3.5 px-4">Payment Status</th>
-                  <th className="py-3.5 px-4">Order Status</th>
-                  <th className="py-3.5 px-4">Delivery Partner</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {orders.map((ord) => {
-                  const placedStr = new Date(ord.placedAt).toLocaleString("en-IN", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    timeZone: "Asia/Kolkata",
-                  });
+          <>
+            {/* 1. Mobile-First Card View (Visible on screens < 768px) */}
+            <div className="block md:hidden divide-y divide-stone-100">
+              {orders.map((ord) => {
+                const placedStr = new Date(ord.placedAt).toLocaleString("en-IN", {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  timeZone: "Asia/Kolkata",
+                });
+                const paymentStatus = ord.payment?.status || "PENDING";
+                const isSuccess = paymentStatus === "COMPLETED";
+                const isFailed = paymentStatus === "FAILED";
 
-                  const paymentStatus = ord.payment?.status || "PENDING";
-                  const isSuccess = paymentStatus === "COMPLETED";
-                  const isFailed = paymentStatus === "FAILED";
+                return (
+                  <div key={ord.id} className="p-4 space-y-3">
+                    {/* Header Row: Order Number & Date */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-sm text-stone-900">
+                          #{ord.orderNumber}
+                        </span>
+                        <OrderStatusBadge status={ord.status} />
+                      </div>
+                      <span className="text-[11px] text-stone-400 font-mono">{placedStr}</span>
+                    </div>
 
-                  return (
-                    <tr key={ord.id} className="hover:bg-stone-50/80 transition-colors">
-                      {/* Order Number */}
-                      <td className="py-3 px-4 font-mono font-bold text-stone-800">
-                        #{ord.orderNumber}
-                      </td>
-
-                      {/* Time Placed */}
-                      <td className="py-3 px-4 text-stone-500 text-[11px] whitespace-nowrap">
-                        {placedStr}
-                      </td>
-
-                      {/* Customer */}
-                      <td className="py-3 px-4">
-                        <span className="font-semibold text-stone-800 block">{ord.user?.name}</span>
-                        <span className="text-[10px] text-stone-400 font-mono">{ord.user?.mobile}</span>
-                      </td>
-
-                      {/* Items */}
-                      <td className="py-3 px-4 text-stone-600 max-w-xs truncate">
-                        {ord.items.map((i: any) => `${i.quantity}x ${i.productNameSnapshot}`).join(", ")}
-                      </td>
-
-                      {/* Amount & Method */}
-                      <td className="py-3 px-4 font-mono">
-                        <span className="font-bold text-stone-800 block">
+                    {/* Customer Row */}
+                    <div className="flex items-center justify-between text-xs text-stone-700 bg-stone-50 p-2.5 rounded-xl">
+                      <div>
+                        <span className="font-semibold block">{ord.user?.name || "Customer"}</span>
+                        <span className="text-[11px] text-stone-400 font-mono">{ord.user?.mobile}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-serif font-bold text-stone-900 text-sm block">
                           ₹{(ord.totalMinor / 100).toFixed(0)}
                         </span>
-                        <span className="text-[10px] text-stone-500 uppercase flex items-center gap-1">
-                          {ord.payment?.method === "COD" ? (
-                            <>
-                              <Banknote className="w-3 h-3 text-amber-600" />
-                              <span>Cash on Delivery</span>
-                            </>
-                          ) : (
-                            <>
-                              <CreditCard className="w-3 h-3 text-emerald-600" />
-                              <span>UPI / Dynamic QR</span>
-                            </>
-                          )}
+                        <span className="text-[10px] text-stone-500 uppercase">
+                          {ord.payment?.method === "COD" ? "Cash on Delivery" : "UPI / Dynamic QR"}
                         </span>
-                      </td>
+                      </div>
+                    </div>
 
-                      {/* Explicit Payment Status */}
-                      <td className="py-3 px-4">
-                        <div className="space-y-1">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                              isSuccess
-                                ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                                : isFailed
-                                ? "bg-rose-100 text-rose-800 border border-rose-300"
-                                : "bg-amber-100 text-amber-800 border border-amber-300"
-                            }`}
-                          >
-                            {isSuccess ? (
+                    {/* Items Summary */}
+                    <div className="text-xs text-stone-600 line-clamp-2">
+                      <span className="font-medium text-stone-500">Items: </span>
+                      {ord.items.map((i: any) => `${i.quantity}x ${i.productNameSnapshot}`).join(", ")}
+                    </div>
+
+                    {/* Payment Status & Quick Toggle */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-stone-100">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            isSuccess
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                              : isFailed
+                              ? "bg-rose-100 text-rose-800 border border-rose-300"
+                              : "bg-amber-100 text-amber-800 border border-amber-300"
+                          }`}
+                        >
+                          {isSuccess ? "✓ Paid" : isFailed ? "✕ Failed" : "⏳ Pending"}
+                        </span>
+
+                        <div className="flex gap-1">
+                          {!isSuccess && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdatePaymentStatus(ord.id, "COMPLETED")}
+                              className="min-h-[36px] px-2 text-[10px] font-bold bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200 cursor-pointer"
+                            >
+                              Paid
+                            </button>
+                          )}
+                          {!isFailed && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdatePaymentStatus(ord.id, "FAILED")}
+                              className="min-h-[36px] px-2 text-[10px] font-bold bg-rose-50 text-rose-700 rounded-lg border border-rose-200 cursor-pointer"
+                            >
+                              Fail
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Manage Button (44px min height for touch) */}
+                      <Link
+                        href={`/admin/orders/${ord.id}`}
+                        className="min-h-[44px] min-w-[100px] px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-charcoal-900 font-bold text-xs shadow-xs transition flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <span>Manage</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 2. Desktop Table View (Visible on screens >= 768px) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-stone-200 bg-stone-50 text-[11px] uppercase text-stone-500 font-semibold">
+                    <th className="py-3.5 px-4">Order #</th>
+                    <th className="py-3.5 px-4">Time Placed</th>
+                    <th className="py-3.5 px-4">Customer</th>
+                    <th className="py-3.5 px-4">Items</th>
+                    <th className="py-3.5 px-4">Amount &amp; Method</th>
+                    <th className="py-3.5 px-4">Payment Status</th>
+                    <th className="py-3.5 px-4">Order Status</th>
+                    <th className="py-3.5 px-4">Delivery Partner</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {orders.map((ord) => {
+                    const placedStr = new Date(ord.placedAt).toLocaleString("en-IN", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Asia/Kolkata",
+                    });
+
+                    const paymentStatus = ord.payment?.status || "PENDING";
+                    const isSuccess = paymentStatus === "COMPLETED";
+                    const isFailed = paymentStatus === "FAILED";
+
+                    return (
+                      <tr key={ord.id} className="hover:bg-stone-50/80 transition-colors">
+                        {/* Order Number */}
+                        <td className="py-3 px-4 font-mono font-bold text-stone-800">
+                          #{ord.orderNumber}
+                        </td>
+
+                        {/* Time Placed */}
+                        <td className="py-3 px-4 text-stone-500 text-[11px] whitespace-nowrap">
+                          {placedStr}
+                        </td>
+
+                        {/* Customer */}
+                        <td className="py-3 px-4">
+                          <span className="font-semibold text-stone-800 block">{ord.user?.name}</span>
+                          <span className="text-[10px] text-stone-400 font-mono">{ord.user?.mobile}</span>
+                        </td>
+
+                        {/* Items */}
+                        <td className="py-3 px-4 text-stone-600 max-w-xs truncate">
+                          {ord.items.map((i: any) => `${i.quantity}x ${i.productNameSnapshot}`).join(", ")}
+                        </td>
+
+                        {/* Amount & Method */}
+                        <td className="py-3 px-4 font-mono">
+                          <span className="font-bold text-stone-800 block">
+                            ₹{(ord.totalMinor / 100).toFixed(0)}
+                          </span>
+                          <span className="text-[10px] text-stone-500 uppercase flex items-center gap-1">
+                            {ord.payment?.method === "COD" ? (
                               <>
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                <span>Success / Paid</span>
-                              </>
-                            ) : isFailed ? (
-                              <>
-                                <XCircle className="w-3 h-3 text-rose-600" />
-                                <span>Failed</span>
+                                <Banknote className="w-3 h-3 text-amber-600" />
+                                <span>Cash on Delivery</span>
                               </>
                             ) : (
                               <>
-                                <Clock className="w-3 h-3 text-amber-600" />
-                                <span>Pending</span>
+                                <CreditCard className="w-3 h-3 text-emerald-600" />
+                                <span>UPI / Dynamic QR</span>
                               </>
                             )}
                           </span>
+                        </td>
 
-                          {/* Quick Admin Toggle Dropdown */}
-                          <div className="flex gap-1 pt-0.5">
-                            {!isSuccess && (
-                              <button
-                                onClick={() => handleUpdatePaymentStatus(ord.id, "COMPLETED")}
-                                className="text-[9px] px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded border border-emerald-200 transition"
-                                title="Mark as Success"
-                              >
-                                ✓ Paid
-                              </button>
-                            )}
-                            {!isFailed && (
-                              <button
-                                onClick={() => handleUpdatePaymentStatus(ord.id, "FAILED")}
-                                className="text-[9px] px-1.5 py-0.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded border border-rose-200 transition"
-                                title="Mark as Failed"
-                              >
-                                ✕ Fail
-                              </button>
-                            )}
-                            {paymentStatus !== "PENDING" && (
-                              <button
-                                onClick={() => handleUpdatePaymentStatus(ord.id, "PENDING")}
-                                className="text-[9px] px-1.5 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded border border-amber-200 transition"
-                                title="Mark as Pending"
-                              >
-                                ⏳ Pending
-                              </button>
-                            )}
+                        {/* Explicit Payment Status */}
+                        <td className="py-3 px-4">
+                          <div className="space-y-1">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                isSuccess
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                  : isFailed
+                                  ? "bg-rose-100 text-rose-800 border border-rose-300"
+                                  : "bg-amber-100 text-amber-800 border border-amber-300"
+                              }`}
+                            >
+                              {isSuccess ? (
+                                <>
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>Success / Paid</span>
+                                </>
+                              ) : isFailed ? (
+                                <>
+                                  <XCircle className="w-3 h-3 text-rose-600" />
+                                  <span>Failed</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="w-3 h-3 text-amber-600" />
+                                  <span>Pending</span>
+                                </>
+                              )}
+                            </span>
+
+                            {/* Quick Admin Toggle Dropdown */}
+                            <div className="flex gap-1 pt-0.5">
+                              {!isSuccess && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdatePaymentStatus(ord.id, "COMPLETED")}
+                                  className="text-[9px] px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded border border-emerald-200 transition cursor-pointer"
+                                  title="Mark as Success"
+                                >
+                                  ✓ Paid
+                                </button>
+                              )}
+                              {!isFailed && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdatePaymentStatus(ord.id, "FAILED")}
+                                  className="text-[9px] px-1.5 py-0.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded border border-rose-200 transition cursor-pointer"
+                                  title="Mark as Failed"
+                                >
+                                  ✕ Fail
+                                </button>
+                              )}
+                              {paymentStatus !== "PENDING" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdatePaymentStatus(ord.id, "PENDING")}
+                                  className="text-[9px] px-1.5 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded border border-amber-200 transition cursor-pointer"
+                                  title="Mark as Pending"
+                                >
+                                  ⏳ Pending
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Order Fulfillment Status */}
-                      <td className="py-3 px-4">
-                        <OrderStatusBadge status={ord.status} />
-                      </td>
+                        {/* Order Fulfillment Status */}
+                        <td className="py-3 px-4">
+                          <OrderStatusBadge status={ord.status} />
+                        </td>
 
-                      {/* Delivery Partner */}
-                      <td className="py-3 px-4 text-stone-600">
-                        {ord.deliveryAssignment?.agent?.name ? (
-                          <span className="font-medium text-stone-700">
-                            {ord.deliveryAssignment.agent.name}
-                          </span>
-                        ) : (
-                          <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-200">
-                            Unassigned
-                          </span>
-                        )}
-                      </td>
+                        {/* Delivery Partner */}
+                        <td className="py-3 px-4 text-stone-600">
+                          {ord.deliveryAssignment?.agent?.name ? (
+                            <span className="font-medium text-stone-700">
+                              {ord.deliveryAssignment.agent.name}
+                            </span>
+                          ) : (
+                            <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-200">
+                              Unassigned
+                            </span>
+                          )}
+                        </td>
 
-                      {/* Actions */}
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <Link href={`/admin/orders/${ord.id}`} className="inline-flex items-center justify-center px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-charcoal-900 font-bold text-xs shadow-sm transition"><span>Manage</span></Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {/* Actions */}
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <Link
+                            href={`/admin/orders/${ord.id}`}
+                            className="inline-flex items-center justify-center min-h-[44px] px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-charcoal-900 font-bold text-xs shadow-sm transition cursor-pointer"
+                          >
+                            <span>Manage</span>
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

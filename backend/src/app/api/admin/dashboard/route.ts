@@ -178,8 +178,11 @@ export async function GET(req: NextRequest) {
     const [
       totalProductsCount,
       activeProductsCount,
+      availableProductsCount,
+      unavailableProductsCount,
       outOfStockProductsCount,
       totalCategoriesCount,
+      activePromotionalCardsCount,
       allTimeOrdersCount,
       pendingOrdersCount,
       completedOrdersCount,
@@ -188,8 +191,11 @@ export async function GET(req: NextRequest) {
     ] = await Promise.all([
       prisma.product.count(),
       prisma.product.count({ where: { isActive: true } }),
+      prisma.product.count({ where: { isAvailable: true, isActive: true } }),
+      prisma.product.count({ where: { OR: [{ isAvailable: false }, { isActive: false }] } }),
       prisma.product.count({ where: { isAvailable: false, isActive: true } }),
       prisma.category.count(),
+      prisma.offerContent.count({ where: { status: "PUBLISHED" } }),
       prisma.order.count(),
       prisma.order.count({
         where: { status: { in: ["PLACED", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"] } },
@@ -234,13 +240,21 @@ export async function GET(req: NextRequest) {
         // Real PostgreSQL System Totals
         totalProducts: totalProductsCount,
         activeProducts: activeProductsCount,
+        availableProducts: availableProductsCount,
+        unavailableProducts: unavailableProductsCount,
         outOfStockProductsCount,
         totalCategories: totalCategoriesCount,
+        activePromotionalCards: activePromotionalCardsCount,
         allTimeOrders: allTimeOrdersCount,
         pendingOrders: pendingOrdersCount,
         completedOrders: completedOrdersCount,
         totalRevenueMinor,
         store_status,
+        deliveryStatus: {
+          pendingDeliveries,
+          deliveredOrders,
+          failedDeliveries,
+        },
       },
       alerts: {
         unassignedOrders,

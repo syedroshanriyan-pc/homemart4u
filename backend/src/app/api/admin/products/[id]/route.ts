@@ -69,7 +69,7 @@ export async function PATCH(
       description: body.description !== undefined ? body.description?.trim() || null : undefined,
       categoryId: body.categoryId || undefined,
       productType: body.productType || undefined,
-      imageUrl: body.imageUrl || undefined,
+      imageUrl: body.imageUrl !== undefined ? (body.imageUrl && String(body.imageUrl).trim() ? String(body.imageUrl).trim() : null) : undefined,
       isAvailable: body.isAvailable !== undefined ? Boolean(body.isAvailable) : undefined,
       isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
       foodType: body.foodType ? (body.foodType === "VEG" || body.foodType === "EGG" ? body.foodType : "NON_VEG") : undefined,

@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth, UserAddress } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { LocationModal } from "@/components/ui/LocationModal";
+import { ProductImage } from "@/components/ui/ProductImage";
 import {
   MapPin,
   CreditCard,
@@ -343,27 +344,37 @@ export default function CheckoutPage() {
             {/* Itemized List */}
             <div className="space-y-3 max-h-60 overflow-y-auto pr-1 text-xs divide-y divide-stone-100">
               {items.map((i) => (
-                <div key={i.id} className="pt-2 first:pt-0 flex justify-between items-start gap-2">
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-stone-900 block">{i.productName}</span>
-                    <span className="text-stone-500 block text-[11px]">
-                      {i.quantity} &times; {i.variantName}
-                    </span>
-                    {i.customizations && i.customizations.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {i.customizations.map((c, idx) => (
-                          <span
-                            key={idx}
-                            className="px-1.5 py-0.5 rounded bg-stone-100 text-[9px] text-stone-700 border border-stone-200"
-                          >
-                            {c.group ? `${c.group}: ` : ""}{c.option}
-                            {c.priceDeltaMinor && c.priceDeltaMinor > 0 ? ` (+₹${(c.priceDeltaMinor / 100).toFixed(0)})` : ""}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                <div key={i.id} className="pt-2.5 first:pt-0 flex justify-between items-start gap-3">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-stone-100 border border-stone-200 shrink-0 shadow-2xs">
+                      <ProductImage
+                        src={i.imageUrl}
+                        alt={i.productName}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="font-semibold text-stone-900 block truncate">{i.productName}</span>
+                      <span className="text-stone-500 block text-[11px]">
+                        {i.quantity} &times; {i.variantName}
+                      </span>
+                      {i.customizations && i.customizations.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {i.customizations.map((c, idx) => (
+                            <span
+                              key={idx}
+                              className="px-1.5 py-0.5 rounded bg-stone-100 text-[9px] text-stone-700 border border-stone-200"
+                            >
+                              {c.group ? `${c.group}: ` : ""}{c.option}
+                              {c.priceDeltaMinor && c.priceDeltaMinor > 0 ? ` (+₹${(c.priceDeltaMinor / 100).toFixed(0)})` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <span className="font-mono font-bold text-stone-900">
+                  <span className="font-mono font-bold text-stone-900 shrink-0 pt-0.5">
                     ₹{((i.unitPriceMinor * i.quantity) / 100).toFixed(2)}
                   </span>
                 </div>

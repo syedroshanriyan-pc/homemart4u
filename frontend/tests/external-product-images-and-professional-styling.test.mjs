@@ -163,3 +163,4 @@ describe("External Product Image URLs & Professional Presentation Suite", () => 
     });
   });
 });
+

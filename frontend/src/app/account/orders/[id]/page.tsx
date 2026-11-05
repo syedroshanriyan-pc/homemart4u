@@ -24,6 +24,7 @@ import {
 import { OrderDetailSkeleton } from "@/components/ui/Skeleton";
 import { useRealTime } from "@/lib/useRealTime";
 import { apiClient } from "@/lib/api-client";
+import { ProductImage } from "@/components/ui/ProductImage";
 export default function OrderTrackingPage() {
   const params = useParams();
   const router = useRouter();
@@ -554,27 +555,37 @@ export default function OrderTrackingPage() {
 
               return (
                 <div key={item.id} className="py-3 flex justify-between items-start gap-4">
-                  <div>
-                    <span className="font-semibold text-charcoal-800 text-sm">
-                      {item.productNameSnapshot}
-                    </span>
-                    <span className="text-charcoal-500 block text-xs mt-0.5">
-                      {item.quantity}x {item.variantNameSnapshot}
-                    </span>
-                    {customizations.length > 0 && (
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {customizations.map((c, i) => (
-                          <span
-                            key={i}
-                            className="px-2 py-0.5 rounded bg-cream-100 text-[10px] text-charcoal-600 border border-cream-200"
-                          >
-                            {c.option}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-cream-100 border border-cream-200 shrink-0 shadow-2xs">
+                      <ProductImage
+                        src={item.product?.imageUrl}
+                        alt={item.productNameSnapshot}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-charcoal-800 text-sm block">
+                        {item.productNameSnapshot}
+                      </span>
+                      <span className="text-charcoal-500 block text-xs mt-0.5">
+                        {item.quantity}x {item.variantNameSnapshot}
+                      </span>
+                      {customizations.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {customizations.map((c, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-0.5 rounded bg-cream-100 text-[10px] text-charcoal-600 border border-cream-200"
+                            >
+                              {c.option}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <span className="font-mono font-bold text-charcoal-800 text-sm">
+                  <span className="font-mono font-bold text-charcoal-800 text-sm shrink-0 pt-0.5">
                     ₹{(item.lineTotalMinor / 100).toFixed(2)}
                   </span>
                 </div>

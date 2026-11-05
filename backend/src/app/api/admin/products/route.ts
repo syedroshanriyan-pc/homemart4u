@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
         categoryId,
         description: description?.trim() || null,
         productType,
-        imageUrl: imageUrl || "https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=600&q=80",
+        imageUrl: imageUrl && String(imageUrl).trim() ? String(imageUrl).trim() : null,
         isAvailable: Boolean(isAvailable),
         foodType: foodType === "VEG" || foodType === "EGG" ? foodType : "NON_VEG",
         isHalal: Boolean(isHalal),

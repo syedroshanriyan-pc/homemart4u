@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import { ProductImage } from "@/components/ui/ProductImage";
 import { Badge } from "@/components/ui/Badge";
@@ -30,6 +30,11 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
+  Upload,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 
 interface CategoryData {
@@ -156,6 +161,121 @@ export default function AdminProductsPage() {
   const [productType, setProductType] = useState("WEIGHT");
   const [imageUrl, setImageUrl] = useState("");
 
+  // Image Upload & Validation States
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [imageVerifyState, setImageVerifyState] = useState<"idle" | "checking" | "valid" | "error">("idle");
+  const [imageVerifyMsg, setImageVerifyMsg] = useState<string | null>(null);
+
+  const handleImageUrlChange = (rawUrl: string) => {
+    setImageUploadError(null);
+    const trimmed = rawUrl.trim();
+
+    if (!trimmed) {
+      setImageUrl("");
+      setImageVerifyState("idle");
+      setImageVerifyMsg(null);
+      return;
+    }
+
+    if (trimmed.startsWith("blob:")) {
+      setImageUploadError("Temporary browser blob URLs cannot be saved. Please click 'Upload from Device' to save the file permanently.");
+      return;
+    }
+
+    // Extract real image from Google imgres / search redirects
+    let extractedUrl = trimmed;
+    if (trimmed.includes("google.") && (trimmed.includes("/imgres") || trimmed.includes("/url"))) {
+      try {
+        const parsed = new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
+        const imgParam = parsed.searchParams.get("imgurl") || parsed.searchParams.get("url") || parsed.searchParams.get("q");
+        if (imgParam && (imgParam.startsWith("http://") || imgParam.startsWith("https://"))) {
+          extractedUrl = decodeURIComponent(imgParam);
+        }
+      } catch {}
+    } else if (trimmed.includes("images.app.goo.gl") || trimmed.includes("goo.gl/images")) {
+      setImageUploadError("This is a Google redirect link rather than a direct image. Please right-click the image in Google and select 'Copy Image Address', or save it and use 'Upload from Device'.");
+      setImageUrl(trimmed);
+      setImageVerifyState("error");
+      return;
+    }
+
+    setImageUrl(extractedUrl);
+
+    // Verify accessibility of external HTTP/HTTPS URL
+    if (extractedUrl.startsWith("http://") || extractedUrl.startsWith("https://")) {
+      setImageVerifyState("checking");
+      setImageVerifyMsg("Testing image accessibility...");
+      if (typeof window !== "undefined") {
+        const img = new (window as any).Image();
+        img.onload = () => {
+          setImageVerifyState("valid");
+          setImageVerifyMsg("✓ Image verified & accessible");
+        };
+        img.onerror = () => {
+          setImageVerifyState("error");
+          setImageVerifyMsg("⚠️ External website may block direct embedding. If image does not show, please save it to your device and click 'Upload from Device'.");
+        };
+        img.src = extractedUrl;
+      }
+    } else if (extractedUrl.startsWith("/api/uploads/")) {
+      setImageVerifyState("valid");
+      setImageVerifyMsg("✓ Persistent database-stored image");
+    } else {
+      setImageVerifyState("idle");
+      setImageVerifyMsg(null);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageUploadError(null);
+
+    // Validate size (max 5 MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setImageUploadError(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 5 MB.`);
+      return;
+    }
+
+    // Validate type
+    if (!file.type.startsWith("image/")) {
+      setImageUploadError(`Invalid file format (${file.type}). Please select a JPEG, PNG, WEBP, or GIF image.`);
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Upload failed");
+      }
+
+      // Save the permanent URL returned from backend
+      setImageUrl(data.url);
+      setImageVerifyState("valid");
+      setImageVerifyMsg("✓ Image uploaded successfully to persistent database storage");
+    } catch (err: any) {
+      console.error("Image upload failed:", err);
+      setImageUploadError(err.message || "Failed to upload image. Please try again.");
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   // Pricing & Save Tag
   const [sellingPriceRs, setSellingPriceRs] = useState("");
   const [mrpRs, setMrpRs] = useState("");
@@ -258,6 +378,10 @@ export default function AdminProductsPage() {
     setSlug("");
     setDescription("");
     setImageUrl("");
+    setImageUploadError(null);
+    setImageVerifyState("idle");
+    setImageVerifyMsg(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setSellingPriceRs("");
     setMrpRs("");
     setSavePriceText("");
@@ -310,6 +434,10 @@ export default function AdminProductsPage() {
     setSlug(prod.slug);
     setDescription(prod.description || "");
     setImageUrl(prod.imageUrl || "");
+    setImageUploadError(null);
+    setImageVerifyState(prod.imageUrl ? "valid" : "idle");
+    setImageVerifyMsg(prod.imageUrl ? "✓ Current saved image" : null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setProductType(prod.productType || "WEIGHT");
 
     const primaryVariant = prod.variants?.[0];
@@ -1615,24 +1743,103 @@ export default function AdminProductsPage() {
                 />
               </div>
 
-              {/* Image URL & Presets */}
-              <div className="space-y-3">
+              {/* Product Image Management */}
+              <div className="space-y-3 p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-semibold text-stone-700">
-                    Product Image (External URL or Preset)
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-amberGold-600" />
+                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-800">
+                      Product Image
+                    </label>
+                  </div>
                   {imageUrl && (
                     <button
                       type="button"
-                      onClick={() => setImageUrl("")}
-                      className="text-[10px] text-rose-600 hover:text-rose-700 font-medium cursor-pointer"
+                      onClick={() => {
+                        setImageUrl("");
+                        setImageUploadError(null);
+                        setImageVerifyState("idle");
+                        setImageVerifyMsg(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      className="text-[10px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer px-2 py-0.5 rounded bg-rose-50 border border-rose-200 transition"
                     >
                       Clear Image
                     </button>
                   )}
                 </div>
 
-                <div className="flex gap-3 items-center">
+                {/* Upload from Device + Paste URL Controls */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                    className="w-full py-2.5 px-3 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-charcoal-800 text-xs font-semibold flex items-center justify-center gap-2 shadow-2xs transition disabled:opacity-50 cursor-pointer min-h-[44px]"
+                  >
+                    {isUploadingImage ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-amberGold-600" />
+                        <span>Uploading Image...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 text-amberGold-600" />
+                        <span>{imageUrl ? "Replace from Device" : "Upload from Device"}</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div className="relative">
+                    <input
+                      type="url"
+                      placeholder="Paste image URL (Google, Unsplash, CDN...)"
+                      value={imageUrl}
+                      onChange={(e) => handleImageUrlChange(e.target.value)}
+                      className="w-full h-full min-h-[44px] px-3 py-2 text-xs bg-white border border-stone-200 rounded-xl text-stone-800 focus:outline-none focus:border-amberGold-500 font-mono shadow-2xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Image Upload/Validation Error */}
+                {imageUploadError && (
+                  <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span>{imageUploadError}</span>
+                  </div>
+                )}
+
+                {/* Verification Probe Message */}
+                {imageVerifyMsg && !imageUploadError && (
+                  <div
+                    className={`p-2 rounded-xl text-[11px] flex items-center gap-2 ${
+                      imageVerifyState === "valid"
+                        ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                        : imageVerifyState === "error"
+                        ? "bg-amber-50 text-amber-900 border border-amber-200"
+                        : "bg-stone-100 text-stone-600 border border-stone-200"
+                    }`}
+                  >
+                    {imageVerifyState === "valid" ? (
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    ) : imageVerifyState === "error" ? (
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    ) : (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-stone-500 shrink-0" />
+                    )}
+                    <span className="leading-snug">{imageVerifyMsg}</span>
+                  </div>
+                )}
+
+                {/* Live Modal Thumbnail Preview */}
+                <div className="flex gap-3 items-center pt-1 border-t border-stone-200/60">
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-stone-100 border border-stone-300 shrink-0 shadow-2xs">
                     <ProductImage
                       src={imageUrl}
@@ -1642,31 +1849,27 @@ export default function AdminProductsPage() {
                       className="object-cover"
                     />
                   </div>
-
-                  <div className="flex-1 min-w-0">
-                    <input
-                      type="url"
-                      placeholder="https://... (supports Cloudinary, S3, Unsplash, Imgur, any image host)"
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      className="w-full px-3.5 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 focus:outline-none focus:border-amberGold-500 font-mono"
-                    />
-                    <p className="text-[10px] text-stone-400 mt-1">
-                      Paste any external HTTPS/HTTP image link. If unreachable or broken, an appetizing branded fallback is automatically displayed.
+                  <div className="text-xs text-stone-500 space-y-0.5">
+                    <p className="font-semibold text-stone-700">
+                      {imageUrl ? "Current Selected Image Preview" : "No image selected (Branded fallback active)"}
+                    </p>
+                    <p className="text-[10px] text-stone-400">
+                      The exact image above will be saved to PostgreSQL and displayed on all storefront cards, menus, product details, cart, and checkout.
                     </p>
                   </div>
                 </div>
 
-                <div>
+                {/* Curated Photography Presets */}
+                <div className="pt-1">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-1.5">
-                    Click to Use High-Resolution Professional Photography:
+                    Or Click to Apply Curated Photography Presets:
                   </span>
-                  <div className="flex flex-wrap items-center gap-1.5 max-h-24 overflow-y-auto p-1 bg-stone-50 rounded-xl border border-stone-200">
+                  <div className="flex flex-wrap items-center gap-1.5 max-h-24 overflow-y-auto p-1 bg-white rounded-xl border border-stone-200">
                     {(department === "MEAT" ? meatPhotoPresets : groceryPhotoPresets).map((preset) => (
                       <button
                         key={preset.label}
                         type="button"
-                        onClick={() => setImageUrl(preset.url)}
+                        onClick={() => handleImageUrlChange(preset.url)}
                         className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition cursor-pointer border ${
                           imageUrl === preset.url
                             ? "bg-amberGold-500 text-charcoal-900 border-amberGold-600 font-bold shadow-2xs"

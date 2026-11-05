@@ -550,6 +550,36 @@
 
 ---
 
+### Suite 23: Database-Backed Product Image Management & Google Images
+- **Source File:** `backend\tests\product-image-management.test.mjs`
+- **Total Test Cases:** 19
+- **Duration:** 16ms
+- **Outcome:** **PASSED (100%)**
+
+| # | Test Case Description | Result |
+| :-: | :--- | :-: |
+| 1 | Product model must have an imageUrl string field for persistence | **PASSED** |
+| 2 | UploadedMedia model must be defined in schema for database-backed file storage | **PASSED** |
+| 3 | upload endpoint must strictly enforce ADMIN session role | **PASSED** |
+| 4 | upload endpoint must validate allowed image mime types | **PASSED** |
+| 5 | upload endpoint must enforce a 5MB maximum file size limit | **PASSED** |
+| 6 | upload endpoint must record audit logs upon successful upload | **PASSED** |
+| 7 | public media route must serve binary data with permanent caching headers | **PASSED** |
+| 8 | POST /api/admin/products must store admin imageUrl or null without forcing Unsplash fallback | **PASSED** |
+| 9 | PATCH /api/admin/products/[id] must set imageUrl to null when cleared by admin | **PASSED** |
+| 10 | Admin Products page must provide file upload input and upload button | **PASSED** |
+| 11 | Admin Products page must clean Google Images redirect URLs | **PASSED** |
+| 12 | Admin Products page must reject temporary browser blob: URLs | **PASSED** |
+| 13 | Admin Products page must display live verification probe for external image URLs | **PASSED** |
+| 14 | Admin Products page must provide remove image button that clears the state | **PASSED** |
+| 15 | ProductImage component must support /api/uploads/ and unoptimized flag | **PASSED** |
+| 16 | Checkout page must display ProductImage for each item in the itemized list | **PASSED** |
+| 17 | Order success page must display ProductImage for confirmed order items | **PASSED** |
+| 18 | Customer Order Tracking page must display ProductImage for order items | **PASSED** |
+| 19 | Admin Order Detail page must display ProductImage for order items | **PASSED** |
+
+---
+
 ## 4. Production Build Verification Logs
 
 ### 4.1 Frontend Build Output (`npm run build:frontend`)

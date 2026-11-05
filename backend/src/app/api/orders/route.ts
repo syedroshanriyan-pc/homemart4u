@@ -29,7 +29,11 @@ export async function GET(req: NextRequest) {
       where: { userId: session.id },
       orderBy: { createdAt: "desc" },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: { select: { id: true, name: true, slug: true, imageUrl: true } },
+          },
+        },
         payment: true,
         deliveryAssignment: {
           include: {
@@ -541,7 +545,11 @@ export async function POST(req: NextRequest) {
             order = await tx.order.create({
               data: orderData,
               include: {
-                items: true,
+                items: {
+          include: {
+            product: { select: { id: true, name: true, slug: true, imageUrl: true } },
+          },
+        },
                 payment: true,
               },
             });
@@ -551,7 +559,11 @@ export async function POST(req: NextRequest) {
               order = await tx.order.create({
                 data: safeData,
                 include: {
-                  items: true,
+                  items: {
+          include: {
+            product: { select: { id: true, name: true, slug: true, imageUrl: true } },
+          },
+        },
                   payment: true,
                 },
               });

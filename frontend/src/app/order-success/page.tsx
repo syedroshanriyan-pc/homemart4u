@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { apiClient } from "@/lib/api-client";
 import { Printer } from "lucide-react";
+import { ProductImage } from "@/components/ui/ProductImage";
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
@@ -416,17 +417,14 @@ function OrderSuccessContent() {
                     <div key={item.id} className="py-3.5 flex items-start justify-between gap-4 text-xs">
                       <div className="flex items-start gap-3">
                         {/* Product Image Thumbnail */}
-                        {item.product?.imageUrl ? (
-                          <img
-                            src={item.product.imageUrl}
+                        <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-stone-100 border border-stone-200 shrink-0 shadow-2xs">
+                          <ProductImage
+                            src={item.product?.imageUrl}
                             alt={item.productNameSnapshot}
-                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover bg-stone-100 border border-stone-200 shrink-0"
+                            fill
+                            className="object-cover"
                           />
-                        ) : (
-                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
-                            <Package className="w-6 h-6" />
-                          </div>
-                        )}
+                        </div>
 
                         <div className="space-y-1">
                           <div className="font-bold text-stone-900">

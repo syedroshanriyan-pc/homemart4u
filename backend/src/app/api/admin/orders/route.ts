@@ -65,7 +65,11 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       include: {
         user: { select: { id: true, name: true, mobile: true, email: true } },
-        items: true,
+        items: {
+          include: {
+            product: { select: { id: true, name: true, slug: true, imageUrl: true } },
+          },
+        },
         payment: true,
         deliveryAssignment: {
           include: {

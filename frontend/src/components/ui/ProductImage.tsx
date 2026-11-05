@@ -136,6 +136,8 @@ export const ProductImage: React.FC<ProductImageProps> = ({
     );
   }
 
+  const shouldUnoptimize = unoptimized || cleanSrc.startsWith("/api/uploads/") || cleanSrc.startsWith("data:");
+
   return (
     <div className={`relative overflow-hidden ${fill ? "w-full h-full" : ""}`}>
       {/* Loading Skeleton Shimmer */}
@@ -156,7 +158,7 @@ export const ProductImage: React.FC<ProductImageProps> = ({
         height={fill ? undefined : height}
         priority={priority}
         sizes={sizes || (fill ? "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" : undefined)}
-        unoptimized={unoptimized}
+        unoptimized={shouldUnoptimize}
         onLoad={() => setIsLoading(false)}
         onError={() => {
           setIsLoading(false);
@@ -171,3 +173,4 @@ export const ProductImage: React.FC<ProductImageProps> = ({
 };
 
 export default ProductImage;
+

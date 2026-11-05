@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { OrderStatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ProductImage } from "@/components/ui/ProductImage";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -307,26 +308,36 @@ export default function AdminOrderDetailPage() {
 
                 return (
                   <div key={item.id} className="py-3 flex justify-between items-start gap-4">
-                    <div>
-                      <p className="font-bold text-sm text-charcoal-800">
-                        {item.productNameSnapshot}
-                      </p>
-                      <p className="text-xs text-charcoal-500 mt-0.5">
-                        {item.quantity}x {item.variantNameSnapshot}
-                        {item.weightGrams ? ` &bull; ${item.weightGrams}g` : ""}
-                      </p>
-                      {customizations.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {customizations.map((c, i) => (
-                            <span
-                              key={i}
-                              className="px-2 py-0.5 rounded bg-cream-100 text-[10px] text-charcoal-600 border border-cream-200 font-medium"
-                            >
-                              {c.group ? `${c.group}: ` : ""}{c.option}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-cream-100 border border-cream-200 shrink-0 shadow-2xs">
+                        <ProductImage
+                          src={item.product?.imageUrl}
+                          alt={item.productNameSnapshot}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-charcoal-800">
+                          {item.productNameSnapshot}
+                        </p>
+                        <p className="text-xs text-charcoal-500 mt-0.5">
+                          {item.quantity}x {item.variantNameSnapshot}
+                          {item.weightGrams ? ` &bull; ${item.weightGrams}g` : ""}
+                        </p>
+                        {customizations.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {customizations.map((c, i) => (
+                              <span
+                                key={i}
+                                className="px-2 py-0.5 rounded bg-cream-100 text-[10px] text-charcoal-600 border border-cream-200 font-medium"
+                              >
+                                {c.group ? `${c.group}: ` : ""}{c.option}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="font-mono font-bold text-sm text-charcoal-800">

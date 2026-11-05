@@ -505,3 +505,16 @@ model RateLimit {
 
   @@map("_RateLimit")
 }
+
+model UploadedMedia {
+  id          String   @id @default(cuid())
+  filename    String
+  mimeType    String
+  sizeBytes   Int
+  dataBase64  String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+}
+

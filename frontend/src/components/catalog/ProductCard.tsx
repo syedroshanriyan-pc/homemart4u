@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ProductImage } from "@/components/ui/ProductImage";
 import { Badge } from "@/components/ui/Badge";
 import { HalalBadge } from "@/components/ui/HalalBadge";
 import { FoodTypeBadge, getProductFoodType } from "@/components/ui/FoodTypeBadge";
@@ -239,19 +240,15 @@ export const ProductCard: React.FC<{
         )}
         {/* Product Image & Badges */}
         <Link href={`/product/${product.slug}`} className="relative aspect-[4/3] w-full overflow-hidden bg-cream-100 block">
-          {product.imageUrl ? (
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-charcoal-400 text-xs">
-              No Image
-            </div>
-          )}
+          <ProductImage
+            src={product.imageUrl}
+            alt={product.name}
+            fill
+            categorySlug={product.category?.slug}
+            department={product.category?.department}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+          />
 
           {/* Availability & Halal & Save Badges */}
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 items-start">

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
+import { ProductImage } from "@/components/ui/ProductImage";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -823,20 +824,27 @@ export default function AdminProductsPage() {
     }
   };
 
-  // Photo Presets
+  // Curated Professional High-Resolution Photography Presets
   const meatPhotoPresets = [
-    { label: "🍗 Chicken Curry Cut", url: "https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=600&q=80" },
-    { label: "🥩 Boneless Breast", url: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=600&q=80" },
-    { label: "🍗 Drumsticks (Legs)", url: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=600&q=80" },
-    { label: "🐟 Fresh Rohu Fish", url: "https://images.unsplash.com/photo-1534482421-64566f976cfa?auto=format&fit=crop&w=600&q=80" },
-    { label: "🥚 Country Desi Eggs", url: "https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=600&q=80" },
+    { label: "🍗 Small Broiler Cut", url: "https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=800&q=80" },
+    { label: "🍗 Big Broiler Cut", url: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=800&q=80" },
+    { label: "🐓 Natti / Country Chicken", url: "https://images.unsplash.com/photo-1548567117-042971c2a8b3?auto=format&fit=crop&w=800&q=80" },
+    { label: "🫀 Fresh Chicken Liver", url: "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=800&q=80" },
+    { label: "🍗 Drumsticks / Leg Piece", url: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=800&q=80" },
+    { label: "🍢 Chicken Lollipop", url: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80" },
+    { label: "🍗 Chicken Wings", url: "https://images.unsplash.com/photo-1524182576066-1be96137b0ec?auto=format&fit=crop&w=800&q=80" },
+    { label: "🥩 Boneless Breast", url: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=800&q=80" },
+    { label: "🥚 Country Desi Nati Eggs", url: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=800&q=80" },
+    { label: "🥚 Farm Fresh White Eggs", url: "https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=800&q=80" },
+    { label: "🥩 Fresh Tender Mutton", url: "https://images.unsplash.com/photo-1603048588665-791ca8aea617?auto=format&fit=crop&w=800&q=80" },
+    { label: "🐟 Fresh Fish & Seafood", url: "https://images.unsplash.com/photo-1534940381676-e578c2e01df3?auto=format&fit=crop&w=800&q=80" },
   ];
 
   const groceryPhotoPresets = [
-    { label: "🥛 Nandini Fresh Milk", url: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80" },
-    { label: "🧈 Pure Desi Ghee", url: "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=600&q=80" },
-    { label: "🌾 Aashirvaad Whole Wheat Atta", url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80" },
-    { label: "🍚 Sona Masoori Rice", url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80" },
+    { label: "🥛 Nandini Fresh Milk", url: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=800&q=80" },
+    { label: "🧈 Pure Desi Cow Ghee", url: "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=800&q=80" },
+    { label: "🌾 Aashirvaad Whole Wheat Atta", url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80" },
+    { label: "🍚 Sona Masoori Rice", url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80" },
   ];
 
   // Filtered Products for Table
@@ -1037,13 +1045,14 @@ export default function AdminProductsPage() {
                     {/* Top Row: Thumbnail + Title + Department */}
                     <div className="flex items-start gap-3">
                       <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0 border border-stone-200">
-                        {p.imageUrl ? (
-                          <Image src={p.imageUrl} alt={p.name} fill className="object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[10px] text-stone-400">
-                            No Img
-                          </div>
-                        )}
+                        <ProductImage
+                          src={p.imageUrl}
+                          alt={p.name}
+                          fill
+                          categorySlug={p.category?.slug}
+                          department={p.category?.department}
+                          className="object-cover"
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -1154,13 +1163,14 @@ export default function AdminProductsPage() {
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0 border border-stone-200">
-                            {p.imageUrl ? (
-                              <Image src={p.imageUrl} alt={p.name} fill className="object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[10px] text-stone-400">
-                                No Img
-                              </div>
-                            )}
+                            <ProductImage
+                              src={p.imageUrl}
+                              alt={p.name}
+                              fill
+                              categorySlug={p.category?.slug}
+                              department={p.category?.department}
+                              className="object-cover"
+                            />
                           </div>
                           <div>
                             <p className="font-semibold text-stone-900 text-sm line-clamp-1">{p.name}</p>
@@ -1606,30 +1616,67 @@ export default function AdminProductsPage() {
               </div>
 
               {/* Image URL & Presets */}
-              <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                  Product Image URL
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 focus:outline-none"
-                />
-
-                <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">Quick Images:</span>
-                  {(department === "MEAT" ? meatPhotoPresets : groceryPhotoPresets).map((preset) => (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-semibold text-stone-700">
+                    Product Image (External URL or Preset)
+                  </label>
+                  {imageUrl && (
                     <button
-                      key={preset.label}
                       type="button"
-                      onClick={() => setImageUrl(preset.url)}
-                      className="px-2 py-0.5 rounded-md text-[10px] bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium transition cursor-pointer"
+                      onClick={() => setImageUrl("")}
+                      className="text-[10px] text-rose-600 hover:text-rose-700 font-medium cursor-pointer"
                     >
-                      {preset.label}
+                      Clear Image
                     </button>
-                  ))}
+                  )}
+                </div>
+
+                <div className="flex gap-3 items-center">
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-stone-100 border border-stone-300 shrink-0 shadow-2xs">
+                    <ProductImage
+                      src={imageUrl}
+                      alt={name || "Product Preview"}
+                      fill
+                      department={department}
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <input
+                      type="url"
+                      placeholder="https://... (supports Cloudinary, S3, Unsplash, Imgur, any image host)"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      className="w-full px-3.5 py-2 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 focus:outline-none focus:border-amberGold-500 font-mono"
+                    />
+                    <p className="text-[10px] text-stone-400 mt-1">
+                      Paste any external HTTPS/HTTP image link. If unreachable or broken, an appetizing branded fallback is automatically displayed.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-1.5">
+                    Click to Use High-Resolution Professional Photography:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5 max-h-24 overflow-y-auto p-1 bg-stone-50 rounded-xl border border-stone-200">
+                    {(department === "MEAT" ? meatPhotoPresets : groceryPhotoPresets).map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => setImageUrl(preset.url)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition cursor-pointer border ${
+                          imageUrl === preset.url
+                            ? "bg-amberGold-500 text-charcoal-900 border-amberGold-600 font-bold shadow-2xs"
+                            : "bg-white hover:bg-stone-100 text-stone-700 border-stone-200"
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -2114,11 +2161,12 @@ export default function AdminProductsPage() {
                   </span>
                   <div className="w-full max-w-[260px] bg-white rounded-2xl border border-stone-200 shadow-sm p-3.5 flex flex-col justify-between">
                     <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-stone-50 mb-2.5">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={imageUrl || "https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=400&q=80"}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
+                      <ProductImage
+                        src={imageUrl}
+                        alt={name || "Preview"}
+                        fill
+                        department={department}
+                        className="object-cover"
                       />
                       <div className="absolute top-2 right-2 bg-white/95 p-1 rounded-md shadow-xs">
                         <FoodTypeBadge type={foodType} showLabel={false} size="sm" />

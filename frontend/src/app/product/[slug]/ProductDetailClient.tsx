@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRealTime } from "@/lib/useRealTime";
 import Image from "next/image";
 import Link from "next/link";
+import { ProductImage } from "@/components/ui/ProductImage";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { HalalBadge } from "@/components/ui/HalalBadge";
@@ -214,20 +215,16 @@ export const ProductDetailClient: React.FC<{ product: ProductData }> = ({ produc
         {/* Left: Product Imagery */}
         <div className="lg:col-span-6 space-y-4">
           <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-cream-100 border border-cream-200 shadow-card">
-            {product.imageUrl ? (
-              <Image
-                src={product.imageUrl}
-                alt={product.name}
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-charcoal-400">
-                Image Not Available
-              </div>
-            )}
+            <ProductImage
+              src={product.imageUrl}
+              alt={product.name}
+              fill
+              priority
+              categorySlug={product.category?.slug}
+              department={product.category?.department}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover"
+            />
             <div className="absolute top-4 left-4 flex items-center gap-2">
               <div className="bg-white/95 backdrop-blur-xs p-1 rounded-xl shadow-xs">
                 <FoodTypeBadge type={getProductFoodType(product)} showLabel={false} size="md" />

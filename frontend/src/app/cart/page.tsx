@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ProductImage } from "@/components/ui/ProductImage";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
@@ -152,18 +153,12 @@ export default function CartPage() {
               <div key={item.id} className="p-4 sm:p-5 flex items-start gap-4">
                 {/* Image */}
                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-cream-100 flex-shrink-0 border border-cream-200">
-                  {item.imageUrl ? (
-                    <Image
-                      src={item.imageUrl}
-                      alt={item.productName}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-charcoal-400">
-                      No Image
-                    </div>
-                  )}
+                  <ProductImage
+                    src={item.imageUrl}
+                    alt={item.productName}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
 
                 {/* Details */}

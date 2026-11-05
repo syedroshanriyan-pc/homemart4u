@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
+import { ProductImage } from "@/components/ui/ProductImage";
 import { useCart } from "@/context/CartContext";
 import { formatCurrency } from "@/lib/delivery";
 import {
@@ -289,15 +290,12 @@ export const GroceryCatalogView: React.FC<GroceryCatalogViewProps> = ({
               >
                 {/* Image Container with Badges */}
                 <div className="relative aspect-square w-full rounded-xl sm:rounded-2xl overflow-hidden bg-stone-50 mb-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={
-                      product.imageUrl ||
-                      "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80"
-                    }
+                  <ProductImage
+                    src={product.imageUrl}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
+                    fill
+                    department="GROCERY"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
 
                   {/* Top-Right Veg / Non-Veg / Egg Badge */}

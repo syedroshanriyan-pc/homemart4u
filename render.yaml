@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: homemart4u-backend
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npx next build
+    startCommand: npx next start -p $PORT
+    healthCheckPath: /api/health?probe=liveness
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        value: https://homemart4u.in
+      - key: ALLOWED_ORIGINS
+        value: https://homemart4u.in,https://homemart4u.vercel.app,http://localhost:3000
+      - key: AUTH_SECRET
+        value: fc_dev_super_secret_jwt_key_2026_mulbagal_secure
+      - key: ADMIN_MOBILE
+        value: "7022461700"
+      - key: ADMIN_EMAIL
+        value: admin@homemart4u.in
+      - key: ADMIN_PASSWORD
+        value: Mian@0071
+      - key: UPI_VPA
+        value: 7975137618@okbizaxis
+      - key: UPI_PAYEE_NAME
+        value: Fresh Chicken Centre
+      - key: NEXT_PUBLIC_UPI_MERCHANT_NAME
+        value: Fresh Chicken Centre
+      - key: UPI_MCC
+        value: "5422"
+      - key: PAYMENTS_ENABLED
+        value: "true"
+      - key: PAYMENT_WEBHOOK_SECRET
+        value: fc_webhook_secret_mulbagal_secure_2026
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false

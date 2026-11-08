@@ -90,5 +90,18 @@ describe("Production API Reliability, Rate Limiting & Catalog Integrity Suite", 
       assert.ok(bootstrap.includes("Fresh Chicken"), "Must include Fresh Chicken promo card");
       assert.ok(bootstrap.includes("Chicken Specials"), "Must include Chicken Specials promo card");
     });
+
+    test("database backup snapshot exists and strictly excludes orders and activity logs", () => {
+      const backupPath = path.join(rootDir, "prisma/data-backup.json");
+      assert.ok(fs.existsSync(backupPath), "data-backup.json must exist");
+      const backup = JSON.parse(fs.readFileSync(backupPath, "utf-8"));
+      assert.ok(backup.counts.products >= 11, "Must contain all 11 products");
+      assert.ok(backup.counts.users >= 1, "Must contain admin user");
+      assert.ok(backup.counts.categories >= 4, "Must contain categories");
+      assert.ok(backup.counts.systemSettings >= 40, "Must contain system settings");
+      assert.equal(backup.data.orders, undefined, "Orders must be strictly excluded");
+      assert.equal(backup.data.auditLogs, undefined, "Audit logs must be strictly excluded");
+    });
   });
 });
+

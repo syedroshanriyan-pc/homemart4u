@@ -1,11 +1,9 @@
 /**
  * Homemart4u Database Restore Utility
- * Restores all exported data from `data-backup.json` into a target PostgreSQL database.
+ * High-performance batch restoration from `data-backup.json` into target PostgreSQL.
  * 
  * Usage:
  *   node backend/prisma/restore-database.cjs
- * Or with custom connection string:
- *   DATABASE_URL="postgresql://..." node backend/prisma/restore-database.cjs
  */
 
 const fs = require("fs");
@@ -13,7 +11,7 @@ const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 const { PrismaClient } = require(path.resolve(__dirname, "../../node_modules/@prisma/client"));
 
-const targetDbUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
+const targetDbUrl = process.env.DATABASE_URL || process.env.DIRECT_URL;
 
 if (!targetDbUrl) {
   console.error("FATAL: DATABASE_URL or DIRECT_URL environment variable is required.");
@@ -44,9 +42,8 @@ async function restoreDatabase() {
   try {
     // 1. Users
     console.log(`\n1. Restoring ${data.users.length} Users...`);
-    const userMap = new Map();
     for (const u of data.users) {
-      const savedUser = await prisma.user.upsert({
+      await prisma.user.upsert({
         where: { mobile: u.mobile },
         create: {
           id: u.id,
@@ -67,8 +64,7 @@ async function restoreDatabase() {
           status: u.status,
         },
       });
-      userMap.set(u.id, savedUser.id);
-      console.log(`  - User: ${savedUser.name} (${savedUser.role}) [${savedUser.id}]`);
+      console.log(`  - User: ${u.name} (${u.role})`);
     }
 
     // 2. Categories
@@ -80,6 +76,7 @@ async function restoreDatabase() {
       const saved = await prisma.category.upsert({
         where: { slug: c.slug },
         create: {
+          id: c.id,
           name: c.name,
           slug: c.slug,
           department: c.department,
@@ -110,6 +107,7 @@ async function restoreDatabase() {
       const saved = await prisma.category.upsert({
         where: { slug: c.slug },
         create: {
+          id: c.id,
           parentId: mappedParentId,
           name: c.name,
           slug: c.slug,
@@ -143,6 +141,7 @@ async function restoreDatabase() {
       const saved = await prisma.product.upsert({
         where: { slug: p.slug },
         create: {
+          id: p.id,
           categoryId: mappedCatId,
           name: p.name,
           slug: p.slug,
@@ -182,203 +181,128 @@ async function restoreDatabase() {
       console.log(`  - Product: ${saved.name} (${saved.slug})`);
     }
 
-    // 4. Product Variants
+    // 4. Product Variants (Batch Insert with mapped product IDs)
     console.log(`\n4. Restoring ${data.variants.length} Product Variants...`);
-    for (const v of data.variants) {
-      const targetProductId = productMap.get(v.productId) || v.productId;
-      const existing = await prisma.productVariant.findFirst({
-        where: { productId: targetProductId, name: v.name },
-      });
-
-      if (existing) {
-        await prisma.productVariant.update({
-          where: { id: existing.id },
-          data: {
-            pricingType: v.pricingType,
-            quantityValue: v.quantityValue,
-            quantityUnit: v.quantityUnit,
-            priceMinor: v.priceMinor,
-            mrpMinor: v.mrpMinor,
-            isAvailable: v.isAvailable,
-          },
-        });
-      } else {
-        await prisma.productVariant.create({
-          data: {
-            productId: targetProductId,
-            name: v.name,
-            pricingType: v.pricingType,
-            quantityValue: v.quantityValue,
-            quantityUnit: v.quantityUnit,
-            priceMinor: v.priceMinor,
-            mrpMinor: v.mrpMinor,
-            isAvailable: v.isAvailable,
-          },
-        });
-      }
-    }
-    console.log(`  - Restored all ${data.variants.length} variants`);
+    const variantsToCreate = data.variants.map((v) => ({
+      id: v.id,
+      productId: productMap.get(v.productId) || v.productId,
+      name: v.name,
+      pricingType: v.pricingType,
+      quantityValue: v.quantityValue,
+      quantityUnit: v.quantityUnit,
+      priceMinor: v.priceMinor,
+      mrpMinor: v.mrpMinor,
+      isAvailable: v.isAvailable,
+    }));
+    const variantRes = await prisma.productVariant.createMany({
+      data: variantsToCreate,
+      skipDuplicates: true,
+    });
+    console.log(`  - Batch inserted product variants: count = ${variantRes.count}`);
 
     // 5. Customization Groups & Options
     console.log(`\n5. Restoring ${data.customizationGroups.length} Customization Groups...`);
     const groupMap = new Map();
     for (const cg of data.customizationGroups) {
       const targetProductId = productMap.get(cg.productId) || cg.productId;
-      const existing = await prisma.customizationGroup.findFirst({
-        where: { productId: targetProductId, name: cg.name },
+      const savedGroup = await prisma.customizationGroup.upsert({
+        where: { id: cg.id },
+        create: {
+          id: cg.id,
+          productId: targetProductId,
+          name: cg.name,
+          selectionType: cg.selectionType,
+          isRequired: cg.isRequired,
+          displayOrder: cg.displayOrder,
+        },
+        update: {
+          productId: targetProductId,
+          name: cg.name,
+          selectionType: cg.selectionType,
+          isRequired: cg.isRequired,
+          displayOrder: cg.displayOrder,
+        },
       });
-
-      let savedGroupId = null;
-      if (existing) {
-        const updated = await prisma.customizationGroup.update({
-          where: { id: existing.id },
-          data: {
-            selectionType: cg.selectionType,
-            isRequired: cg.isRequired,
-            displayOrder: cg.displayOrder,
-          },
-        });
-        savedGroupId = updated.id;
-      } else {
-        const created = await prisma.customizationGroup.create({
-          data: {
-            productId: targetProductId,
-            name: cg.name,
-            selectionType: cg.selectionType,
-            isRequired: cg.isRequired,
-            displayOrder: cg.displayOrder,
-          },
-        });
-        savedGroupId = created.id;
-      }
-      groupMap.set(cg.id, savedGroupId);
+      groupMap.set(cg.id, savedGroup.id);
     }
+    console.log(`  - Restored ${data.customizationGroups.length} customization groups`);
 
     console.log(`\n6. Restoring ${data.customizationOptions.length} Customization Options...`);
-    for (const co of data.customizationOptions) {
-      const targetGroupId = groupMap.get(co.groupId) || co.groupId;
-      const existing = await prisma.customizationOption.findFirst({
-        where: { groupId: targetGroupId, name: co.name },
-      });
-
-      if (existing) {
-        await prisma.customizationOption.update({
-          where: { id: existing.id },
-          data: {
-            priceDeltaMinor: co.priceDeltaMinor,
-            isActive: co.isActive,
-            displayOrder: co.displayOrder,
-          },
-        });
-      } else {
-        await prisma.customizationOption.create({
-          data: {
-            groupId: targetGroupId,
-            name: co.name,
-            priceDeltaMinor: co.priceDeltaMinor,
-            isActive: co.isActive,
-            displayOrder: co.displayOrder,
-          },
-        });
-      }
-    }
-    console.log(`  - Restored all ${data.customizationOptions.length} customization options`);
+    const optionsToCreate = data.customizationOptions.map((co) => ({
+      id: co.id,
+      groupId: groupMap.get(co.groupId) || co.groupId,
+      name: co.name,
+      priceDeltaMinor: co.priceDeltaMinor,
+      isActive: co.isActive,
+      displayOrder: co.displayOrder,
+    }));
+    const optionRes = await prisma.customizationOption.createMany({
+      data: optionsToCreate,
+      skipDuplicates: true,
+    });
+    console.log(`  - Batch inserted customization options: count = ${optionRes.count}`);
 
     // 7. Coupons
     console.log(`\n7. Restoring ${data.coupons.length} Coupons...`);
-    for (const cp of data.coupons) {
-      await prisma.coupon.upsert({
-        where: { code: cp.code },
-        create: {
-          code: cp.code,
-          type: cp.type,
-          value: cp.value,
-          minimumOrderMinor: cp.minimumOrderMinor,
-          maximumDiscountMinor: cp.maximumDiscountMinor,
-          buyQuantity: cp.buyQuantity,
-          getQuantity: cp.getQuantity,
-          freeDelivery: cp.freeDelivery,
-          usageLimit: cp.usageLimit,
-          perUserLimit: cp.perUserLimit,
-          startsAt: new Date(cp.startsAt),
-          expiresAt: new Date(cp.expiresAt),
-          isActive: cp.isActive,
-        },
-        update: {
-          type: cp.type,
-          value: cp.value,
-          minimumOrderMinor: cp.minimumOrderMinor,
-          maximumDiscountMinor: cp.maximumDiscountMinor,
-          buyQuantity: cp.buyQuantity,
-          getQuantity: cp.getQuantity,
-          freeDelivery: cp.freeDelivery,
-          usageLimit: cp.usageLimit,
-          perUserLimit: cp.perUserLimit,
-          startsAt: new Date(cp.startsAt),
-          expiresAt: new Date(cp.expiresAt),
-          isActive: cp.isActive,
-        },
-      });
-      console.log(`  - Coupon: ${cp.code} (${cp.type})`);
-    }
+    const couponsToCreate = data.coupons.map((cp) => ({
+      id: cp.id,
+      code: cp.code,
+      type: cp.type,
+      value: cp.value,
+      minimumOrderMinor: cp.minimumOrderMinor,
+      maximumDiscountMinor: cp.maximumDiscountMinor,
+      buyQuantity: cp.buyQuantity,
+      getQuantity: cp.getQuantity,
+      freeDelivery: cp.freeDelivery,
+      usageLimit: cp.usageLimit,
+      perUserLimit: cp.perUserLimit,
+      startsAt: new Date(cp.startsAt),
+      expiresAt: new Date(cp.expiresAt),
+      isActive: cp.isActive,
+    }));
+    const couponRes = await prisma.coupon.createMany({
+      data: couponsToCreate,
+      skipDuplicates: true,
+    });
+    console.log(`  - Batch inserted coupons: count = ${couponRes.count}`);
 
     // 8. Offers & Promotional Cards
     console.log(`\n8. Restoring ${data.offers.length} Promotional Cards & Offers...`);
-    for (const off of data.offers) {
-      await prisma.offerContent.upsert({
-        where: { id: off.id },
-        create: {
-          id: off.id,
-          title: off.title,
-          description: off.description,
-          type: off.type,
-          imageUrl: off.imageUrl,
-          ctaLabel: off.ctaLabel,
-          ctaUrl: off.ctaUrl,
-          couponCode: off.couponCode,
-          status: off.status,
-          priority: off.priority,
-          startDate: off.startDate ? new Date(off.startDate) : null,
-          endDate: off.endDate ? new Date(off.endDate) : null,
-          createdBy: off.createdBy,
-          updatedBy: off.updatedBy,
-        },
-        update: {
-          title: off.title,
-          description: off.description,
-          type: off.type,
-          imageUrl: off.imageUrl,
-          ctaLabel: off.ctaLabel,
-          ctaUrl: off.ctaUrl,
-          couponCode: off.couponCode,
-          status: off.status,
-          priority: off.priority,
-          startDate: off.startDate ? new Date(off.startDate) : null,
-          endDate: off.endDate ? new Date(off.endDate) : null,
-          createdBy: off.createdBy,
-          updatedBy: off.updatedBy,
-        },
-      });
-      console.log(`  - Offer/Card: ${off.title} (${off.status})`);
-    }
+    const offersToCreate = data.offers.map((off) => ({
+      id: off.id,
+      title: off.title,
+      description: off.description,
+      type: off.type,
+      imageUrl: off.imageUrl,
+      ctaLabel: off.ctaLabel,
+      ctaUrl: off.ctaUrl,
+      couponCode: off.couponCode,
+      status: off.status,
+      priority: off.priority,
+      startDate: off.startDate ? new Date(off.startDate) : null,
+      endDate: off.endDate ? new Date(off.endDate) : null,
+      createdBy: off.createdBy,
+      updatedBy: off.updatedBy,
+    }));
+    const offerRes = await prisma.offerContent.createMany({
+      data: offersToCreate,
+      skipDuplicates: true,
+    });
+    console.log(`  - Batch inserted promotional offers & cards: count = ${offerRes.count}`);
 
     // 9. System Settings
     console.log(`\n9. Restoring ${data.systemSettings.length} System Settings...`);
-    for (const ss of data.systemSettings) {
-      await prisma.systemSetting.upsert({
-        where: { key: ss.key },
-        create: {
-          key: ss.key,
-          value: ss.value,
-          description: ss.description,
-        },
-        update: {
-          value: ss.value,
-          description: ss.description,
-        },
-      });
-    }
-    console.log(`  - Restored all ${data.systemSettings.length} system settings`);
+    const settingsToCreate = data.systemSettings.map((ss) => ({
+      id: ss.id,
+      key: ss.key,
+      value: ss.value,
+      description: ss.description,
+    }));
+    const settingRes = await prisma.systemSetting.createMany({
+      data: settingsToCreate,
+      skipDuplicates: true,
+    });
+    console.log(`  - Batch inserted system settings: count = ${settingRes.count}`);
 
     console.log("\n========================================================");
     console.log("DATABASE RESTORATION COMPLETED SUCCESSFULLY!");

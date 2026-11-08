@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
-    apple: "/favicon.svg",
+    apple: "/og-logo.png",
   },
   keywords: [
     "homemart4u",
@@ -50,12 +50,34 @@ export const metadata: Metadata = {
     }
   })(),
   openGraph: {
-    title: "homemart4u | Fresh Chicken & Eggs Mulbagal",
-    description: "Farm-fresh chicken and quality eggs delivered to your doorstep in Mulbagal from Srinivaspur Road.",
+    title: "homemart4u — Fresh Chicken & Farm Eggs in Mulbagal",
+    description: "Order 100% Halal farm-fresh chicken and quality eggs in Mulbagal. Daily fresh cuts, ~20-minute delivery from Srinivaspur Road, Cash on Delivery available.",
     type: "website",
     locale: "en_IN",
     siteName: "homemart4u",
     url: "https://homemart4u.in",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "homemart4u — Fresh Chicken & Farm Eggs Mulbagal",
+        type: "image/png",
+      },
+      {
+        url: "/og-logo.png",
+        width: 512,
+        height: 512,
+        alt: "homemart4u Logo",
+        type: "image/png",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "homemart4u — Fresh Chicken & Farm Eggs in Mulbagal",
+    description: "Order 100% Halal farm-fresh chicken and quality eggs in Mulbagal. Daily fresh cuts delivered in ~20 minutes.",
+    images: ["/og-image.png"],
   },
 };
 

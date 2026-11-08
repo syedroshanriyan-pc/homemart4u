@@ -26,7 +26,13 @@ export async function generateMetadata({
     openGraph: {
       title: `${product.name} | homemart4u Mulbagal`,
       description: product.description || `Order ${product.name} in Mulbagal.`,
-      images: product.imageUrl ? [product.imageUrl] : [],
+      images: product.imageUrl ? [product.imageUrl] : ["/og-image.png"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} | homemart4u Mulbagal`,
+      description: product.description || `Order ${product.name} in Mulbagal.`,
+      images: product.imageUrl ? [product.imageUrl] : ["/og-image.png"],
     },
   };
 }

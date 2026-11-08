@@ -1,8 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp, isTrustedSsrRequest, rateLimitHeaders } from "@/lib/rate-limiter";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const isSsr = isTrustedSsrRequest(req);
+    const ip = getClientIp(req);
+    const rateLimit = checkRateLimit(`categories:${isSsr ? "ssr-trusted" : ip}`, {
+      maxRequests: isSsr ? 2400 : 600,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many category requests. Please slow down." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.resetSeconds), ...rateLimitHeaders(rateLimit) } }
+      );
+    }
     const categories = await prisma.category.findMany({
       where: { isActive: true },
       orderBy: [{ department: "asc" }, { displayOrder: "asc" }, { name: "asc" }],
@@ -27,7 +41,8 @@ export async function GET() {
       { categories },
       {
         headers: {
-          "Cache-Control": "public, max-age=0, s-maxage=1, stale-while-revalidate=5, must-revalidate",
+          "Cache-Control": "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
+          ...rateLimitHeaders(rateLimit),
         },
       }
     );

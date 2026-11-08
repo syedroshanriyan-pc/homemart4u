@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit, getClientIp, rateLimitHeaders } from "@/lib/rate-limiter";
+import { checkRateLimit, getClientIp, isTrustedSsrRequest, rateLimitHeaders } from "@/lib/rate-limiter";
 
 export async function GET(req: NextRequest) {
   try {
+    const isSsr = isTrustedSsrRequest(req);
     const ip = getClientIp(req);
-    const rateLimit = checkRateLimit(`products:${ip}`, { maxRequests: 120, windowMs: 60 * 1000 });
+    const rateLimit = checkRateLimit(`products:${isSsr ? "ssr-trusted" : ip}`, {
+      maxRequests: isSsr ? 2400 : 600,
+      windowMs: 60 * 1000,
+    });
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { error: "Too many product requests. Please slow down." },
@@ -64,7 +68,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ products }, {
       headers: {
-        "Cache-Control": "public, max-age=0, s-maxage=1, stale-while-revalidate=5, must-revalidate",
+        "Cache-Control": "public, max-age=30, s-maxage=60, stale-while-revalidate=120",
         ...rateLimitHeaders(rateLimit)
       }
     });

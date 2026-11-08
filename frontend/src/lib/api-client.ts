@@ -67,79 +67,113 @@ function resolveUrl(endpoint: string, params?: Record<string, string | number | 
   return fullUrl;
 }
 
+// In-flight GET request deduplication cache to prevent duplicate concurrent network fetches
+const inFlightRequests = new Map<string, Promise<any>>();
+
 export async function apiRequest<T = any>(
   endpoint: string,
   options: FetchOptions = {}
 ): Promise<T> {
   const { params, headers = {}, ...customConfig } = options;
+  const method = (customConfig.method || "GET").toUpperCase();
 
   const url = resolveUrl(endpoint, params);
 
-  // Retrieve stored token if in browser for Bearer authorization fallback
-  let bearerToken: string | null = null;
-  if (typeof window !== "undefined") {
+  // For GET requests, deduplicate concurrent identical in-flight requests
+  const isGet = method === "GET";
+  const dedupeKey = isGet ? `${url}::${JSON.stringify(headers)}` : null;
+
+  if (dedupeKey && inFlightRequests.has(dedupeKey)) {
+    return inFlightRequests.get(dedupeKey) as Promise<T>;
+  }
+
+  const execute = async (): Promise<T> => {
+    // Retrieve stored token if in browser for Bearer authorization fallback
+    let bearerToken: string | null = null;
+    if (typeof window !== "undefined") {
+      try {
+        bearerToken = localStorage.getItem("fc_token");
+      } catch {
+        // localStorage may be disabled
+      }
+    }
+
+    const reqHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
+      ...(typeof window === "undefined"
+        ? {
+            "x-internal-ssr-token":
+              process.env.AUTH_SECRET ||
+              "fc_dev_super_secret_jwt_key_2026_mulbagal_secure",
+          }
+        : {}),
+      ...(headers as Record<string, string>),
+    };
+
+    let signal = customConfig.signal;
+    let timeoutId: any = null;
+    if (!signal) {
+      if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+        signal = AbortSignal.timeout(30000); // 30s timeout to accommodate cold starts
+      } else {
+        const controller = new AbortController();
+        timeoutId = setTimeout(() => controller.abort(), 30000);
+        signal = controller.signal;
+      }
+    }
+
+    const config: RequestInit = {
+      method,
+      headers: reqHeaders,
+      credentials: "include", // Forwards httpOnly session cookie
+      ...customConfig,
+      signal,
+    };
+
     try {
-      bearerToken = localStorage.getItem("fc_token");
-    } catch {
-      // localStorage may be disabled
-    }
-  }
+      const response = await fetch(url, config);
 
-  const reqHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
-    ...(headers as Record<string, string>),
+      let data: any = null;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+
+      if (!response.ok) {
+        const retryAfter = response.headers.get("retry-after");
+        const errorMessage =
+          (data && typeof data === "object" && (data.error || data.message)) ||
+          (response.status === 429
+            ? `Rate limit exceeded. Please retry in ${retryAfter || 5} seconds.`
+            : `Request failed with status ${response.status}`);
+        throw new ApiError(errorMessage, response.status, data);
+      }
+
+      return data as T;
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        throw err;
+      }
+      throw new ApiError(err.message || "Network connection error", 0);
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
   };
 
-  let signal = customConfig.signal;
-  let timeoutId: any = null;
-  if (!signal) {
-    if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
-      signal = AbortSignal.timeout(30000); // 30s timeout to accommodate cold starts
-    } else {
-      const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 30000);
-      signal = controller.signal;
-    }
+  if (dedupeKey) {
+    const promise = execute().finally(() => {
+      inFlightRequests.delete(dedupeKey);
+    });
+    inFlightRequests.set(dedupeKey, promise);
+    return promise;
   }
 
-  const config: RequestInit = {
-    method: "GET",
-    headers: reqHeaders,
-    credentials: "include", // Forwards httpOnly session cookie
-    ...customConfig,
-    signal,
-  };
-
-  try {
-    const response = await fetch(url, config);
-
-    let data: any = null;
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
-      data = await response.text();
-    }
-
-    if (!response.ok) {
-      const errorMessage =
-        (data && typeof data === "object" && (data.error || data.message)) ||
-        `Request failed with status ${response.status}`;
-      throw new ApiError(errorMessage, response.status, data);
-    }
-
-    return data as T;
-  } catch (err: any) {
-    if (err instanceof ApiError) {
-      throw err;
-    }
-    throw new ApiError(err.message || "Network connection error", 0);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
+  return execute();
 }
 
 export const apiClient = {

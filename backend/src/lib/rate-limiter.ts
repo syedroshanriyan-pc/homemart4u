@@ -8,20 +8,21 @@
 
 import { PrismaClient } from "@prisma/client";
 
-const globalForRateLimiter = globalThis as unknown as {
-  prismaRateLimiter?: PrismaClient;
+const globalForPrisma = globalThis as unknown as {
+  prisma?: PrismaClient;
 };
 
-const prisma = globalForRateLimiter.prismaRateLimiter ?? new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL || process.env.DIRECT_URL,
+const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL || process.env.DIRECT_URL,
+      },
     },
-  },
-});
-if (process.env.NODE_ENV !== "production") {
-  globalForRateLimiter.prismaRateLimiter = prisma;
-}
+  });
+
+globalForPrisma.prisma = prisma;
 
 export interface RateLimitConfig {
   /** Maximum number of allowed requests in the time window */
@@ -85,6 +86,16 @@ export function getClientIp(req: Request): string {
 }
 
 /**
+ * Validates whether the incoming request originates from the trusted Next.js SSR frontend
+ */
+export function isTrustedSsrRequest(req: Request): boolean {
+  const ssrToken = req.headers.get("x-internal-ssr-token");
+  if (!ssrToken) return false;
+  const expectedSecret = process.env.AUTH_SECRET || "fc_dev_super_secret_jwt_key_2026_mulbagal_secure";
+  return ssrToken === expectedSecret;
+}
+
+/**
  * Fast local in-memory sliding window check
  */
 export function checkRateLimit(
@@ -119,11 +130,6 @@ export function checkRateLimit(
   record.timestamps.push(now);
   const remaining = config.maxRequests - record.timestamps.length;
   const resetSeconds = Math.ceil(config.windowMs / 1000);
-
-  // Asynchronously record in shared PostgreSQL table for multi-instance syncing
-  syncToSharedStore(key, config).catch(() => {
-    // Non-blocking background sync fail-safe
-  });
 
   return {
     allowed: true,

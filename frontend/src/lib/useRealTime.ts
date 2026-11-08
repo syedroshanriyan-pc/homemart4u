@@ -13,7 +13,7 @@ export interface UseRealTimeOptions {
 /**
  * Shared Real-Time hook using Server-Sent Events (SSE) backed by /api/events.
  * Provides instant data invalidation/refetch upon server event publication,
- * with automatic reconnection backoff and bounded fallback polling.
+ * with automatic reconnection backoff, debounced refreshes, and bounded fallback polling.
  */
 export function useRealTime({
   channels,
@@ -36,8 +36,28 @@ export function useRealTime({
     let eventSource: EventSource | null = null;
     let fallbackTimer: NodeJS.Timeout | null = null;
     let reconnectTimer: NodeJS.Timeout | null = null;
+    let refreshDebounceTimer: NodeJS.Timeout | null = null;
+    let lastRefreshTime = 0;
     let retryDelay = 1000;
     let isDisposed = false;
+
+    function scheduleRefresh() {
+      if (!onRefreshRef.current) return;
+      const now = Date.now();
+      // Throttle refresh to at most once every 3 seconds
+      if (now - lastRefreshTime < 3000) {
+        if (!refreshDebounceTimer) {
+          refreshDebounceTimer = setTimeout(() => {
+            refreshDebounceTimer = null;
+            lastRefreshTime = Date.now();
+            onRefreshRef.current?.();
+          }, 3000 - (now - lastRefreshTime));
+        }
+        return;
+      }
+      lastRefreshTime = now;
+      onRefreshRef.current();
+    }
 
     function connect() {
       if (isDisposed) return;
@@ -53,8 +73,10 @@ export function useRealTime({
           if (!e.data) return;
           try {
             const parsed = JSON.parse(e.data);
+            // Skip refetching on initial connection handshake
+            if (parsed.status === "connected") return;
             onEventRef.current?.(parsed);
-            onRefreshRef.current?.();
+            scheduleRefresh();
           } catch {
             // Ignore parse errors
           }
@@ -78,9 +100,9 @@ export function useRealTime({
             try {
               const parsed = JSON.parse(e.data);
               onEventRef.current?.(parsed);
-              onRefreshRef.current?.();
+              scheduleRefresh();
             } catch {
-              onRefreshRef.current?.();
+              scheduleRefresh();
             }
           });
         });
@@ -107,7 +129,7 @@ export function useRealTime({
     // Bounded fallback polling in case SSE is blocked by client proxies
     if (fallbackIntervalMs > 0) {
       fallbackTimer = setInterval(() => {
-        onRefreshRef.current?.();
+        scheduleRefresh();
       }, fallbackIntervalMs);
     }
 
@@ -119,7 +141,7 @@ export function useRealTime({
       }
       if (reconnectTimer) clearTimeout(reconnectTimer);
       if (fallbackTimer) clearInterval(fallbackTimer);
+      if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
     };
   }, [channelsKey, enabled, fallbackIntervalMs]);
 }
-

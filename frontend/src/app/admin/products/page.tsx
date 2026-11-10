@@ -42,6 +42,8 @@ interface CategoryData {
   name: string;
   slug: string;
   department: "MEAT" | "GROCERY";
+  parentId?: string | null;
+  parent?: { id: string; name: string; slug: string } | null;
 }
 
 interface ProductVariantData {
@@ -155,6 +157,7 @@ export default function AdminProductsPage() {
   // Form Fields
   const [department, setDepartment] = useState<"MEAT" | "GROCERY">("MEAT");
   const [categoryId, setCategoryId] = useState("");
+  const [subcategoryId, setSubcategoryId] = useState("");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
@@ -342,7 +345,18 @@ export default function AdminProductsPage() {
     setTimeout(() => setStatusMessage(null), 3500);
   };
 
-  // Filtered categories for current selected department
+  // Main categories for department (where parentId is null)
+  const mainCategoriesForDept = useMemo(() => {
+    return categories.filter((c) => c.department === department && !c.parentId);
+  }, [categories, department]);
+
+  // Subcategories belonging to the currently selected main category
+  const subcategoriesForSelectedCategory = useMemo(() => {
+    if (!categoryId) return [];
+    return categories.filter((c) => c.parentId === categoryId);
+  }, [categories, categoryId]);
+
+  // Legacy fallback for any legacy lookups
   const filteredCategoriesForDept = useMemo(() => {
     return categories.filter((c) => c.department === department);
   }, [categories, department]);
@@ -350,11 +364,13 @@ export default function AdminProductsPage() {
   // Handle department change in form
   const handleDepartmentChange = (newDept: "MEAT" | "GROCERY") => {
     setDepartment(newDept);
-    const matchingCats = categories.filter((c) => c.department === newDept);
-    if (matchingCats.length > 0) {
-      setCategoryId(matchingCats[0].id);
+    const matchingMain = categories.filter((c) => c.department === newDept && !c.parentId);
+    if (matchingMain.length > 0) {
+      setCategoryId(matchingMain[0].id);
+      setSubcategoryId("");
     } else {
       setCategoryId("");
+      setSubcategoryId("");
     }
 
     if (newDept === "MEAT") {
@@ -388,6 +404,7 @@ export default function AdminProductsPage() {
     setBadgeText("");
     setIsAvailable(true);
     setIsActive(true);
+    setSubcategoryId("");
     setShowNewCatInput(false);
 
     // Initial variants
@@ -429,7 +446,17 @@ export default function AdminProductsPage() {
     setEditingProduct(prod);
     const prodDept = (prod.category?.department as "MEAT" | "GROCERY") || "MEAT";
     setDepartment(prodDept);
-    setCategoryId(prod.categoryId || "");
+    
+    // Resolve Main Category vs Subcategory
+    const targetCat = categories.find((c) => c.id === prod.categoryId);
+    if (targetCat && targetCat.parentId) {
+      setCategoryId(targetCat.parentId);
+      setSubcategoryId(targetCat.id);
+    } else {
+      setCategoryId(prod.categoryId || "");
+      setSubcategoryId("");
+    }
+
     setName(prod.name);
     setSlug(prod.slug);
     setDescription(prod.description || "");
@@ -532,9 +559,13 @@ export default function AdminProductsPage() {
     }
   };
 
-  // Create subcategory inline
+  // Create subcategory inline under selected Main Category
   const handleCreateSubcategory = async () => {
     if (!newCatName.trim()) return;
+    if (!categoryId) {
+      alert("Please select a Main Category first before adding a subcategory.");
+      return;
+    }
     setCreatingCat(true);
     try {
       const slugVal = newCatName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -545,17 +576,17 @@ export default function AdminProductsPage() {
           name: newCatName.trim(),
           slug: slugVal,
           department,
-          parentId: categoryId ? categoryId : null,
+          parentId: categoryId,
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
         setCategories((prev) => [...prev, data.category]);
-        setCategoryId(data.category.id);
+        setSubcategoryId(data.category.id);
         setNewCatName("");
         setShowNewCatInput(false);
-        showStatus(`Subcategory "${data.category.name}" created!`);
+        showStatus(`Subcategory "${data.category.name}" created under ${categories.find(c => c.id === categoryId)?.name || 'category'}!`);
       } else {
         const err = await res.json();
         alert(err.error || "Failed to create subcategory");
@@ -827,14 +858,14 @@ export default function AdminProductsPage() {
       return;
     }
 
-    // Default to first category of department if none selected
-    let finalCatId = categoryId;
-    if (!finalCatId && filteredCategoriesForDept.length > 0) {
-      finalCatId = filteredCategoriesForDept[0].id;
+    // If a subcategory was selected, use subcategoryId; otherwise use categoryId (main category)
+    let finalCatId = subcategoryId || categoryId;
+    if (!finalCatId && mainCategoriesForDept.length > 0) {
+      finalCatId = mainCategoriesForDept[0].id;
     }
 
     if (!finalCatId) {
-      alert("Please select or create a subcategory");
+      alert("Please select or create a category");
       setActiveModalTab("details");
       return;
     }
@@ -1190,7 +1221,7 @@ export default function AdminProductsPage() {
                             {isMeat ? "🥩 Meat" : "🛒 Grocery"}
                           </span>
                           <span className="text-[11px] text-stone-500 font-medium truncate">
-                            {p.category?.name}
+                            {p.category?.parent ? `${p.category.parent.name} › ${p.category.name}` : p.category?.name}
                           </span>
                         </div>
                         <h3 className="font-semibold text-stone-900 text-sm line-clamp-1 mt-0.5">{p.name}</h3>
@@ -1325,7 +1356,15 @@ export default function AdminProductsPage() {
                           {isMeat ? "🥩 Meat" : "🛒 Grocery"}
                         </span>
                         <p className="text-xs font-medium text-stone-700 mt-1">
-                          {p.category?.name || "General"}
+                          {p.category?.parent ? (
+                            <>
+                              <span className="text-stone-500">{p.category.parent.name}</span>
+                              <span className="text-stone-400 mx-1">›</span>
+                              <strong className="text-stone-800">{p.category.name}</strong>
+                            </>
+                          ) : (
+                            p.category?.name || "General"
+                          )}
                         </p>
                       </td>
 
@@ -1641,57 +1680,82 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* Subcategory */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
+              {/* Main Category & Subcategory Selection */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Main Category */}
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-stone-600 block">
-                    Subcategory / Hub Section *
+                    Main Category *
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowNewCatInput(!showNewCatInput)}
-                    className="text-[11px] font-bold text-rose-600 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    {showNewCatInput ? "Cancel" : "+ Add New Subcategory"}
-                  </button>
-                </div>
-
-                {showNewCatInput ? (
-                  <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder={`New ${department === "MEAT" ? "Meat" : "Grocery"} subcategory name...`}
-                      value={newCatName}
-                      onChange={(e) => setNewCatName(e.target.value)}
-                      className="flex-1 px-3 py-1.5 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none"
-                    />
-                    <Button
-                      type="button"
-                      variant="primary"
-                      size="sm"
-                      onClick={handleCreateSubcategory}
-                      isLoading={creatingCat}
-                      className="text-xs"
-                    >
-                      Save
-                    </Button>
-                  </div>
-                ) : (
                   <select
                     value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 font-medium focus:outline-none focus:ring-2 focus:ring-rose-400/50"
+                    onChange={(e) => {
+                      setCategoryId(e.target.value);
+                      setSubcategoryId("");
+                    }}
+                    className="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 font-semibold focus:outline-none focus:ring-2 focus:ring-rose-400/50"
                   >
-                    {filteredCategoriesForDept.length === 0 && (
-                      <option value="">No subcategories yet (General)</option>
+                    {mainCategoriesForDept.length === 0 && (
+                      <option value="">No main categories found</option>
                     )}
-                    {filteredCategoriesForDept.map((c) => (
+                    {mainCategoriesForDept.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.name}
+                        {department === "MEAT" ? "🥩" : "🛒"} {c.name}
                       </option>
                     ))}
                   </select>
-                )}
+                </div>
+
+                {/* Subcategory */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-wider text-stone-600 block">
+                      Subcategory (Optional)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewCatInput(!showNewCatInput)}
+                      className="text-[11px] font-bold text-rose-600 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      {showNewCatInput ? "Cancel" : "+ Add Subcategory"}
+                    </button>
+                  </div>
+
+                  {showNewCatInput ? (
+                    <div className="p-2.5 bg-stone-50 rounded-2xl border border-stone-200 flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder={`Subcategory name under ${categories.find(c => c.id === categoryId)?.name || 'category'}...`}
+                        value={newCatName}
+                        onChange={(e) => setNewCatName(e.target.value)}
+                        className="flex-1 px-3 py-1.5 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none"
+                      />
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        onClick={handleCreateSubcategory}
+                        isLoading={creatingCat}
+                        className="text-xs shrink-0"
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  ) : (
+                    <select
+                      value={subcategoryId}
+                      onChange={(e) => setSubcategoryId(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 font-medium focus:outline-none focus:ring-2 focus:ring-rose-400/50"
+                    >
+                      <option value="">— None (Directly under {categories.find(c => c.id === categoryId)?.name || "Main Category"}) —</option>
+                      {subcategoriesForSelectedCategory.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          ↳ {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               </div>
 
               {/* Name & Slug */}

@@ -79,13 +79,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A valid URL slug is required" }, { status: 400 });
     }
 
+    const rawParentId = parentId && String(parentId).trim() !== "" ? String(parentId).trim() : null;
+
     let resolvedDepartment = department === "GROCERY" ? "GROCERY" : "MEAT";
 
     // Validate parent category if this is a subcategory
     let parentCategory: any = null;
-    if (parentId) {
+    let effectiveParentId: string | null = null;
+
+    if (rawParentId) {
       parentCategory = await prisma.category.findUnique({
-        where: { id: String(parentId) },
+        where: { id: rawParentId },
       });
 
       if (!parentCategory) {
@@ -94,23 +98,38 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      resolvedDepartment = parentCategory.department;
+      // If the selected parent is already a subcategory, attach to its root parent to preserve a clean 2-level hierarchy
+      effectiveParentId = parentCategory.parentId || parentCategory.id;
+      const rootParent = parentCategory.parentId
+        ? await prisma.category.findUnique({ where: { id: parentCategory.parentId } })
+        : parentCategory;
+      resolvedDepartment = rootParent ? rootParent.department : parentCategory.department;
     }
 
-    // Check slug uniqueness
-    const existing = await prisma.category.findUnique({ where: { slug: rawSlug } });
+    // Check slug uniqueness and disambiguate if needed
+    let finalSlug = rawSlug;
+    const existing = await prisma.category.findUnique({ where: { slug: finalSlug } });
     if (existing) {
-      return NextResponse.json(
-        { error: `A category with the slug '${rawSlug}' already exists. Please choose a distinct name or slug.` },
-        { status: 409 }
-      );
+      if (slug && String(slug).trim()) {
+        return NextResponse.json(
+          { error: `A category with the slug '${rawSlug}' already exists. Please choose a distinct name or slug.` },
+          { status: 409 }
+        );
+      } else {
+        // Auto-generate deterministic unique slug
+        let counter = 1;
+        while (await prisma.category.findUnique({ where: { slug: `${rawSlug}-${counter}` } })) {
+          counter++;
+        }
+        finalSlug = `${rawSlug}-${counter}`;
+      }
     }
 
     const category = await prisma.category.create({
       data: {
         name: trimmedName,
-        slug: rawSlug,
-        parentId: parentCategory ? parentCategory.id : null,
+        slug: finalSlug,
+        parentId: effectiveParentId,
         department: resolvedDepartment,
         description: description ? String(description).trim() : null,
         imageUrl: imageUrl ? String(imageUrl).trim() : null,

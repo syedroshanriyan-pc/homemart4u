@@ -26,9 +26,21 @@ export async function GET(req: NextRequest) {
     };
 
     if (category) {
-      where.category = {
-        OR: [{ slug: category }, { id: category }],
-      };
+      const targetCat = await prisma.category.findFirst({
+        where: {
+          OR: [{ slug: category }, { id: category }],
+        },
+        include: { children: { select: { id: true } } },
+      });
+
+      if (targetCat) {
+        const catIds = [targetCat.id, ...(targetCat.children || []).map((ch) => ch.id)];
+        where.categoryId = { in: catIds };
+      } else {
+        where.category = {
+          OR: [{ slug: category }, { id: category }],
+        };
+      }
     }
 
     if (available === "true") {
@@ -48,7 +60,14 @@ export async function GET(req: NextRequest) {
       orderBy: { displayOrder: "asc" },
       include: {
         category: {
-          select: { id: true, name: true, slug: true, department: true },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            department: true,
+            parentId: true,
+            parent: { select: { id: true, name: true, slug: true } },
+          },
         },
         variants: {
           where: { isAvailable: true },

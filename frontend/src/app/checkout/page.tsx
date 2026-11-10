@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useRealTime } from "@/lib/useRealTime";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
@@ -40,7 +41,7 @@ export default function CheckoutPage() {
   const [storeStatus, setStoreStatus] = useState<string>("OPEN");
   const [storeClosedMessage, setStoreClosedMessage] = useState<string>("");
 
-  useEffect(() => {
+  const fetchSettings = useCallback(() => {
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
@@ -53,6 +54,15 @@ export default function CheckoutPage() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useRealTime({
+    channels: ["customer", "settings"],
+    onRefresh: fetchSettings,
+  });
   
   const idempotencyKeyRef = useRef<string>("");
   const isOrderPlacedRef = useRef(false);

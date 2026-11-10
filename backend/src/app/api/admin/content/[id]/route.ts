@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { publishEvent } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,19 @@ export async function PUT(
       },
     });
 
+        try {
+      publishEvent("customer", "OFFERS_UPDATED", {
+        offerId: id,
+        action: "UPDATED",
+        timestamp: new Date().toISOString(),
+      });
+      publishEvent("admin", "OFFERS_UPDATED", {
+        offerId: id,
+        action: "UPDATED",
+        timestamp: new Date().toISOString(),
+      });
+    } catch {}
+
     return NextResponse.json({ success: true, item: updated });
   } catch (error) {
     console.error("Update offer content error:", error);
@@ -120,6 +134,19 @@ export async function DELETE(
         metadataJson: JSON.stringify({ title: existing.title }),
       },
     });
+
+        try {
+      publishEvent("customer", "OFFERS_UPDATED", {
+        offerId: id,
+        action: "DELETED",
+        timestamp: new Date().toISOString(),
+      });
+      publishEvent("admin", "OFFERS_UPDATED", {
+        offerId: id,
+        action: "DELETED",
+        timestamp: new Date().toISOString(),
+      });
+    } catch {}
 
     return NextResponse.json({ success: true });
   } catch (error) {

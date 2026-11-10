@@ -657,15 +657,23 @@ export default function AdminCategoriesPage() {
             </label>
             <select
               value={form.parentId}
-              onChange={(e) => setForm({ ...form, parentId: e.target.value })}
+              onChange={(e) => {
+                const selectedParentId = e.target.value;
+                const parentObj = allFlatCategories.find((c) => c.id === selectedParentId);
+                setForm({
+                  ...form,
+                  parentId: selectedParentId,
+                  department: parentObj ? parentObj.department : form.department,
+                });
+              }}
               className="w-full px-3.5 py-2.5 bg-cream-50 border border-cream-300 rounded-xl text-xs text-charcoal-800 font-medium focus:outline-none focus:border-amberGold-500"
             >
               <option value="">— None (This is a Main Category) —</option>
               {allFlatCategories
-                .filter((c) => !isEditing || c.id !== editingId)
+                .filter((c) => (!isEditing || c.id !== editingId) && !c.parentId)
                 .map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.department === "MEAT" ? "🥩" : "🛒"} {c.name} {c.parentId ? `(Sub of ${allFlatCategories.find(p => p.id === c.parentId)?.name || "parent"})` : "(Main Category)"}
+                    {c.department === "MEAT" ? "🥩" : "🛒"} {c.name} (Main Category)
                   </option>
                 ))}
             </select>

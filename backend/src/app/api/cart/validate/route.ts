@@ -215,7 +215,11 @@ export async function POST(req: NextRequest) {
 
       const isChickenCategory =
         variant.product.category.slug === "fresh-chicken" ||
-        variant.product.category.slug === "masala-special";
+        variant.product.category.slug === "masala-special" ||
+        (variant.product.category.department === "MEAT" &&
+         variant.product.category.slug !== "eggs" &&
+         variant.product.category.slug !== "farm-eggs" &&
+         variant.product.category.slug !== "desi-eggs");
 
       const weightGrams =
         variant.pricingType === "WEIGHT" || variant.quantityUnit === "g"

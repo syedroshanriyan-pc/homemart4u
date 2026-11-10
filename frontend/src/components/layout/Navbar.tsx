@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { useRealTime } from "@/lib/useRealTime";
 import { LocationModal } from "@/components/ui/LocationModal";
 import {
   MapPin,
@@ -34,20 +35,26 @@ export const Navbar: React.FC = () => {
     "We're currently closed. You can browse our menu, but ordering is temporarily unavailable."
   );
 
-  React.useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const res = await fetch("/api/settings");
-        if (res.ok) {
-          const data = await res.json();
-          const s = data.settings || {};
-          if (s.store_status) setStoreStatus(s.store_status);
-          if (s.store_closed_message) setStoreClosedMessage(s.store_closed_message);
-        }
-      } catch {}
-    };
-    fetchStatus();
+  const fetchStatus = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/settings");
+      if (res.ok) {
+        const data = await res.json();
+        const s = data.settings || {};
+        if (s.store_status) setStoreStatus(s.store_status);
+        if (s.store_closed_message) setStoreClosedMessage(s.store_closed_message);
+      }
+    } catch {}
   }, []);
+
+  React.useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  useRealTime({
+    channels: ["customer", "settings"],
+    onRefresh: fetchStatus,
+  });
 
   // Lock body scroll when side drawer is open
   React.useEffect(() => {

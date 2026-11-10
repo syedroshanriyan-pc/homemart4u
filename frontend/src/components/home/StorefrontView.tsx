@@ -34,7 +34,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
 
   useEffect(() => {
     setLiveProducts(products);
-  }, [products]);
+  }, [liveProducts]);
 
   useRealTime({
     channels: ["catalog"],
@@ -82,7 +82,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
   // Filter products by subcategory and search query
   const filteredProducts = useMemo(() => {
     return meatProducts.filter((prod) => {
-      if (selectedSubCat !== "ALL" && prod.category?.slug !== selectedSubCat) {
+      if (selectedSubCat !== "ALL" && prod.category?.slug !== selectedSubCat && (prod.category as any)?.parent?.slug !== selectedSubCat) {
         return false;
       }
 

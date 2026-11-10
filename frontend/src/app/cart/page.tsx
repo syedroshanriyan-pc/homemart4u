@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useRealTime } from "@/lib/useRealTime";
 import Link from "next/link";
 import Image from "next/image";
 import { ProductImage } from "@/components/ui/ProductImage";
@@ -43,7 +44,7 @@ export default function CartPage() {
   const [storeStatus, setStoreStatus] = useState<string>("OPEN");
   const [storeClosedMessage, setStoreClosedMessage] = useState<string>("");
 
-  useEffect(() => {
+  const fetchSettings = useCallback(() => {
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
@@ -56,6 +57,15 @@ export default function CartPage() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useRealTime({
+    channels: ["customer", "settings"],
+    onRefresh: fetchSettings,
+  });
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();

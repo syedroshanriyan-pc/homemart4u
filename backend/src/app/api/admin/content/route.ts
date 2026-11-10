@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { publishEvent } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +116,19 @@ export async function POST(req: NextRequest) {
         metadataJson: JSON.stringify({ title: item.title, type: item.type, status: item.status }),
       },
     });
+
+        try {
+      publishEvent("customer", "OFFERS_UPDATED", {
+        offerId: item.id,
+        action: "CREATED",
+        timestamp: new Date().toISOString(),
+      });
+      publishEvent("admin", "OFFERS_UPDATED", {
+        offerId: item.id,
+        action: "CREATED",
+        timestamp: new Date().toISOString(),
+      });
+    } catch {}
 
     return NextResponse.json({ success: true, item });
   } catch (error) {

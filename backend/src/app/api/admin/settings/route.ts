@@ -63,6 +63,15 @@ const ALLOWED_SETTING_KEYS = new Set([
   "SHOP_LNG",
 ]);
 
+/**
+ * Internal operational keys managed by backend services.
+ * These are never exposed in business settings forms and are safely ignored if received in payloads.
+ */
+const INTERNAL_OPERATIONAL_KEYS = new Set([
+  "DELIVERY_ROUND_ROBIN_INDEX",
+  "delivery_round_robin_index",
+]);
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
@@ -74,6 +83,11 @@ export async function GET(req: NextRequest) {
     }
 
     const settings = await prisma.systemSetting.findMany({
+      where: {
+        key: {
+          in: Array.from(ALLOWED_SETTING_KEYS),
+        },
+      },
       orderBy: { key: "asc" },
     });
 
@@ -101,6 +115,12 @@ export async function POST(req: NextRequest) {
     for (const [key, rawValue] of Object.entries(settings)) {
       const trimmedKey = typeof key === "string" ? key.trim() : "";
       if (!trimmedKey) continue;
+
+      // Safely ignore internal operational keys (e.g. delivery round-robin sequence pointer)
+      // to avoid blocking business settings updates or corrupting internal service state
+      if (INTERNAL_OPERATIONAL_KEYS.has(trimmedKey)) {
+        continue;
+      }
 
       if (!ALLOWED_SETTING_KEYS.has(trimmedKey)) {
         return NextResponse.json(
@@ -195,7 +215,14 @@ export async function POST(req: NextRequest) {
       console.warn("Event publish skipped:", e);
     }
 
-    const updated = await prisma.systemSetting.findMany({ orderBy: { key: "asc" } });
+    const updated = await prisma.systemSetting.findMany({
+      where: {
+        key: {
+          in: Array.from(ALLOWED_SETTING_KEYS),
+        },
+      },
+      orderBy: { key: "asc" },
+    });
 
     return NextResponse.json({ success: true, settings: updated });
   } catch (error) {

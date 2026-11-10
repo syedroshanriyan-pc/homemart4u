@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { publishEvent } from "@/lib/events";
@@ -43,14 +44,111 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getSessionUser(req);
     if (!session || session.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
-    const { id } = await params;
     const body = await req.json();
+
+    // 1. Verify target product existence before starting transaction
+    const existingProduct = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        variants: true,
+        category: true,
+        customizationGroups: { include: { options: true } },
+      },
+    });
+
+    if (!existingProduct) {
+      return NextResponse.json(
+        { error: `Product with ID '${id}' not found.`, code: "PRODUCT_NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    // 2. Validate URL slug uniqueness if slug is being updated
+    if (body.slug !== undefined) {
+      const cleanSlug = String(body.slug).trim().toLowerCase();
+      if (!cleanSlug) {
+        return NextResponse.json(
+          { error: "Product URL slug cannot be empty.", code: "EMPTY_SLUG" },
+          { status: 400 }
+        );
+      }
+      if (cleanSlug !== existingProduct.slug) {
+        const slugCollision = await prisma.product.findFirst({
+          where: { slug: cleanSlug, id: { not: id } },
+        });
+        if (slugCollision) {
+          return NextResponse.json(
+            {
+              error: `URL slug '${cleanSlug}' is already in use by another product ("${slugCollision.name}"). Please choose a unique slug.`,
+              code: "SLUG_COLLISION",
+            },
+            { status: 409 }
+          );
+        }
+      }
+    }
+
+    // 3. Validate category existence if categoryId is being updated
+    if (body.categoryId !== undefined && body.categoryId !== null) {
+      const categoryExists = await prisma.category.findUnique({
+        where: { id: body.categoryId },
+      });
+      if (!categoryExists) {
+        return NextResponse.json(
+          {
+            error: `Category '${body.categoryId}' does not exist.`,
+            code: "CATEGORY_NOT_FOUND",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 4. Validate variants array if provided
+    if (Array.isArray(body.variants)) {
+      if (body.variants.length === 0) {
+        return NextResponse.json(
+          { error: "A product must have at least one variant.", code: "EMPTY_VARIANTS" },
+          { status: 400 }
+        );
+      }
+      for (let i = 0; i < body.variants.length; i++) {
+        const v = body.variants[i];
+        if (!v || typeof v !== "object") continue;
+        if (!v.name || !String(v.name).trim()) {
+          return NextResponse.json(
+            { error: `Variant #${i + 1} must have a non-empty name.`, code: "INVALID_VARIANT_NAME" },
+            { status: 400 }
+          );
+        }
+        const vPrice = v.priceMinor !== undefined
+          ? parseInt(String(v.priceMinor), 10)
+          : (v.priceRs !== undefined && String(v.priceRs).trim() !== "" ? Math.round(parseFloat(String(v.priceRs)) * 100) : NaN);
+
+        if (isNaN(vPrice) || vPrice <= 0) {
+          return NextResponse.json(
+            { error: `Variant "${v.name}" must have a valid selling price greater than 0.`, code: "INVALID_VARIANT_PRICE" },
+            { status: 400 }
+          );
+        }
+        if (v.id) {
+          const belongs = existingProduct.variants.some((ev) => ev.id === v.id);
+          if (!belongs) {
+            return NextResponse.json(
+              { error: `Variant ID '${v.id}' does not belong to this product.`, code: "VARIANT_MISMATCH" },
+              { status: 400 }
+            );
+          }
+        }
+      }
+    }
 
     const rawMrp = body.mrpMinor !== undefined && body.mrpMinor !== null && String(body.mrpMinor).trim() !== ""
       ? parseInt(String(body.mrpMinor), 10)
@@ -95,16 +193,23 @@ export async function PATCH(
       // 2. Handle nested array of variants if provided
       if (Array.isArray(body.variants) && body.variants.length > 0) {
         const sentVariantIds = new Set(body.variants.map((v: any) => v.id).filter(Boolean));
-        // Delete or deactivate removed variants
-        const removedVariants = product.variants.filter((v) => !sentVariantIds.has(v.id));
+        // Delete or deactivate removed variants with explicit OrderItem check
+        // to avoid aborting the PostgreSQL transaction block
+        const removedVariants = existingProduct.variants.filter((v) => !sentVariantIds.has(v.id));
         for (const rem of removedVariants) {
-          try {
-            await tx.productVariant.delete({ where: { id: rem.id } });
-          } catch {
+          const orderItemsCount = await tx.orderItem.count({
+            where: { variantId: rem.id },
+          });
+
+          if (orderItemsCount > 0) {
+            // Soft-deactivate variant to preserve historical order records
             await tx.productVariant.update({
               where: { id: rem.id },
               data: { isAvailable: false },
             });
+          } else {
+            // Safe to permanently delete unreferenced variant
+            await tx.productVariant.delete({ where: { id: rem.id } });
           }
         }
 
@@ -319,9 +424,40 @@ export async function PATCH(
     }
 
     return NextResponse.json({ success: true, product: updatedProduct });
-  } catch (error) {
-    console.error("Update product error:", error);
-    return NextResponse.json({ error: "Failed to update product" }, { status: 500 });
+  } catch (error: any) {
+    const correlationId = crypto.randomUUID();
+    console.error(`[AdminProductUpdate][${correlationId}] Error updating product ${id}:`, error);
+
+    if (error?.code === "P2002") {
+      return NextResponse.json(
+        {
+          error: "A product with this unique field (such as URL slug) already exists. Please choose a unique slug or name.",
+          code: "P2002",
+          correlationId,
+        },
+        { status: 409 }
+      );
+    }
+
+    if (error?.code === "P2003") {
+      return NextResponse.json(
+        {
+          error: "Cannot update or delete this record because it is referenced by existing orders or catalog items.",
+          code: "P2003",
+          correlationId,
+        },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error: error?.message || "Failed to update product",
+        code: error?.code || "PRODUCT_UPDATE_FAILED",
+        correlationId,
+      },
+      { status: 500 }
+    );
   }
 }
 

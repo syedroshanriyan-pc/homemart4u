@@ -973,11 +973,11 @@ export default function AdminProductsPage() {
         showStatus(editingProduct ? "Product & variants updated successfully!" : "Product created successfully with all variants!");
         fetchProducts();
       } else {
-        const err = await res.json();
-        alert(err.error || "Failed to save product");
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || err.message || "Failed to save product");
       }
-    } catch {
-      alert("Error saving product");
+    } catch (error: any) {
+      alert(error?.message || "Error saving product");
     } finally {
       setIsSubmitting(false);
     }

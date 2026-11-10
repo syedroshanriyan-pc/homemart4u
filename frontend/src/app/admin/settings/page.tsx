@@ -72,8 +72,11 @@ export default function AdminSettingsPage() {
       if (res.ok) {
         const data = await res.json();
         const map: Record<string, string> = {};
+        const ignoredKeys = new Set(["DELIVERY_ROUND_ROBIN_INDEX", "delivery_round_robin_index"]);
         (data.settings || []).forEach((s: { key: string; value: string }) => {
-          map[s.key] = s.value;
+          if (!ignoredKeys.has(s.key)) {
+            map[s.key] = s.value;
+          }
         });
 
         // Normalize aliases
@@ -152,6 +155,9 @@ export default function AdminSettingsPage() {
     }
 
     try {
+      const ignoredKeys = ["DELIVERY_ROUND_ROBIN_INDEX", "delivery_round_robin_index"];
+      ignoredKeys.forEach((key) => delete (settings as any)[key]);
+
       const res = await fetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

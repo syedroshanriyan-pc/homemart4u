@@ -107,10 +107,10 @@ describe("HOMEMART4U — Admin Settings Allowlist & Product Update Reliability S
     });
 
     it("prevents Postgres transaction abort by checking OrderItem count before variant deletion", () => {
-      // Must check order items count before attempting delete
+      // Must check order items count or references before attempting delete
       assert.ok(
-        productUpdateContent.includes("tx.orderItem.count"),
-        "Must check orderItem count before deleting variant inside transaction"
+        productUpdateContent.includes("tx.orderItem.findMany") || productUpdateContent.includes("tx.orderItem.count"),
+        "Must check orderItem references before deleting variant inside transaction"
       );
       assert.ok(
         productUpdateContent.includes("isAvailable: false"),

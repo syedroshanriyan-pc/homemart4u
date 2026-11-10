@@ -22,7 +22,9 @@ const prisma =
     },
   });
 
-globalForPrisma.prisma = prisma;
+if (!globalForPrisma.prisma) {
+  globalForPrisma.prisma = prisma;
+}
 
 export interface RateLimitConfig {
   /** Maximum number of allowed requests in the time window */
